@@ -15,6 +15,9 @@ dependencies = ["scipy>=1.11"]
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
+[project.entry-points.pytest11]
+signaltest = "signaltest.plugin"
+
 [project.urls]
 Homepage = "https://github.com/Falcon305/signaltest"
 
