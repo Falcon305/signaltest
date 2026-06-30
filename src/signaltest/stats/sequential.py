@@ -1,9 +1,34 @@
 from collections.abc import Sequence
+from math import sqrt
 from typing import Any, Callable, Optional
+
+from scipy.stats import norm
 
 from signaltest.compare import measure_scores
 from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate
 from signaltest.stats.significance import PERMUTATION
+
+POCOCK = "pocock"
+OBRIEN_FLEMING = "obrien_fleming"
+
+
+def alpha_schedule(alpha: float, looks: int, spending: str = OBRIEN_FLEMING) -> list[float]:
+    """Per-look nominal alphas that sum to `alpha`.
+
+    Any allocation summing to `alpha` keeps the union-bound guarantee regardless of
+    how the looks correlate. O'Brien-Fleming spends almost nothing early and saves
+    most of the budget for the final look, so stopping early needs strong evidence
+    but the final decision keeps nearly full power; Pocock spreads it evenly.
+    """
+    if looks < 1:
+        raise ValueError("looks must be >= 1")
+    if spending == POCOCK:
+        return [alpha / looks] * looks
+    if spending != OBRIEN_FLEMING:
+        raise ValueError(f"unknown spending function: {spending}")
+    z = norm.ppf(1 - alpha / 2)
+    cumulative = [float(2 - 2 * norm.cdf(z / sqrt((k + 1) / looks))) for k in range(looks)]
+    return [cumulative[0]] + [cumulative[k] - cumulative[k - 1] for k in range(1, looks)]
 
 
 def sample_schedule(min_n: int, max_n: int, looks: int) -> list[int]:
@@ -33,24 +58,26 @@ def sequential_gate(
     min_effect: Optional[float] = None,
     test: str = PERMUTATION,
     comparisons: int = 1,
+    spending: str = OBRIEN_FLEMING,
 ) -> Verdict:
     """Draw candidate samples in batches, stopping as soon as the gate is conclusive.
 
-    Alpha is spent across the looks (Bonferroni) so peeking does not inflate false
-    positives, and across `comparisons` cases so a suite of sequential gates keeps
-    suite-wide false positives bounded. A PASS can still be reached early once the
-    effect CI sits within the no-meaningful-regression threshold.
+    Alpha is spent across the looks (so peeking does not inflate false positives)
+    and across `comparisons` cases (so a suite of sequential gates keeps suite-wide
+    false positives bounded). A PASS can still be reached early once the effect CI
+    sits within the no-meaningful-regression threshold.
     """
-    looks = len(sizes)
-    alpha_k = alpha / (looks * comparisons)
+    schedule = alpha_schedule(alpha, len(sizes), spending)
     drawn: list[Optional[Any]] = []
     stats: Optional[dict[str, Any]] = None
-    for target in sizes:
+    alpha_k = schedule[-1] / comparisons
+    for i, target in enumerate(sizes):
         while len(drawn) < target:
             drawn.append(sampler())
         candidate = [s for s in drawn if s is not None]
         if len(candidate) < 2:
             continue
+        alpha_k = schedule[i] / comparisons
         stats = measure_scores(
             baseline,
             candidate,

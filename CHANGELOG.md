@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format is based on
 
 ## Unreleased
 
+### Added
+- Sequential mode spends alpha with an O'Brien-Fleming schedule by default (almost
+  none early, most at the final look), so early stops need strong evidence but the
+  final decision keeps nearly full power. `spending="pocock"` keeps the even split.
+
 ### Changed
 - A sequential `run_suite` now spends alpha across the cases as well as the looks,
   so suite-wide false positives stay bounded under early stopping (the multiplicity

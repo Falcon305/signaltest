@@ -1,7 +1,7 @@
 import pytest
 
 from signaltest.stats.gate import FAIL, INCONCLUSIVE, PASS
-from signaltest.stats.sequential import sample_schedule, sequential_gate
+from signaltest.stats.sequential import alpha_schedule, sample_schedule, sequential_gate
 
 
 def cycle_sampler(values):
@@ -60,7 +60,7 @@ def test_fails_early_on_clear_regression():
         sizes=[5, 10, 15, 20],
     )
     assert verdict.status == FAIL
-    assert verdict.samples == 5
+    assert verdict.samples is not None and verdict.samples < 20
 
 
 def test_reaches_max_when_noisy_but_centered():
@@ -97,6 +97,45 @@ def test_inconclusive_when_all_samples_error():
     )
     assert verdict.status == INCONCLUSIVE
     assert verdict.samples == 6
+
+
+def test_alpha_schedule_pocock_is_flat():
+    assert alpha_schedule(0.05, 4, "pocock") == pytest.approx([0.0125] * 4)
+
+
+def test_alpha_schedule_sums_to_alpha():
+    for spending in ("pocock", "obrien_fleming"):
+        assert sum(alpha_schedule(0.05, 5, spending)) == pytest.approx(0.05)
+
+
+def test_alpha_schedule_obrien_fleming_backloads():
+    schedule = alpha_schedule(0.05, 4, "obrien_fleming")
+    assert schedule[0] < schedule[-1]
+    assert schedule == sorted(schedule)
+    assert schedule[-1] > 0.0125  # more than the flat share at the final look
+
+
+def test_alpha_schedule_single_look_is_full_alpha():
+    assert alpha_schedule(0.05, 1) == pytest.approx([0.05])
+
+
+@pytest.mark.parametrize("looks,spending", [(0, "pocock"), (3, "nonsense")])
+def test_alpha_schedule_validates(looks, spending):
+    with pytest.raises(ValueError):
+        alpha_schedule(0.05, looks, spending)
+
+
+def test_pocock_fails_earlier_than_obrien_fleming():
+    base = [1.0] * 8
+    pocock = sequential_gate(
+        base, cycle_sampler([0.0]), kind="numeric", sizes=[5, 10, 15, 20], spending="pocock"
+    )
+    obf = sequential_gate(
+        base, cycle_sampler([0.0]), kind="numeric", sizes=[5, 10, 15, 20], spending="obrien_fleming"
+    )
+    assert pocock.status == obf.status == FAIL
+    assert pocock.samples is not None and obf.samples is not None
+    assert pocock.samples < obf.samples
 
 
 def test_comparisons_raise_the_fail_bar():

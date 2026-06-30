@@ -17,6 +17,7 @@ _DEFAULTS: dict[str, Any] = {
     "sequential": False,
     "max_n": None,
     "looks": 4,
+    "spending": "obrien_fleming",
 }
 
 _CONFIG: dict[str, Any] = dict(_DEFAULTS)
