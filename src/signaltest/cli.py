@@ -6,7 +6,7 @@ from typing import Optional
 from signaltest import __version__
 from signaltest.baseline.store import BaselineStore
 from signaltest.metrics.base import BOOLEAN, NUMERIC
-from signaltest.report import format_report, read_json, to_html, to_markdown
+from signaltest.report import format_report, read_json, to_html, to_junit, to_markdown
 from signaltest.stats.power import advise
 
 
@@ -24,7 +24,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     rm_cmd.add_argument("case")
     report_cmd = sub.add_parser("report")
     report_cmd.add_argument("path")
-    report_cmd.add_argument("--format", choices=["md", "text", "html"], default="md")
+    report_cmd.add_argument("--format", choices=["md", "text", "html", "junit"], default="md")
     power_cmd = sub.add_parser("power")
     power_cmd.add_argument("path")
     power_cmd.add_argument("case")
@@ -64,7 +64,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if args.command == "report":
         results = read_json(args.path)
-        renderers = {"md": to_markdown, "html": to_html, "text": format_report}
+        renderers = {"md": to_markdown, "html": to_html, "junit": to_junit, "text": format_report}
         print(renderers[args.format](results))
         return 0
 

@@ -3,6 +3,7 @@ from dataclasses import asdict
 from html import escape
 from pathlib import Path
 from typing import Union
+from xml.etree.ElementTree import Element, SubElement, tostring
 
 from signaltest.stats.gate import FAIL, INCONCLUSIVE, PASS, Verdict
 
@@ -84,6 +85,25 @@ def to_html(results: dict[str, Verdict]) -> str:
         f"<p><strong>{_summary(results)}</strong></p>\n"
         "</body></html>\n"
     )
+
+
+def to_junit(results: dict[str, Verdict]) -> str:
+    counts = _counts(results)
+    suite = Element(
+        "testsuite",
+        name="signaltest",
+        tests=str(len(results)),
+        failures=str(counts[FAIL]),
+        skipped=str(counts[INCONCLUSIVE]),
+    )
+    for case_id, verdict in results.items():
+        case = SubElement(suite, "testcase", name=case_id, classname="signaltest")
+        if verdict.status == FAIL:
+            failure = SubElement(case, "failure", message=describe(verdict))
+            failure.text = verdict.reason
+        elif verdict.status == INCONCLUSIVE:
+            SubElement(case, "skipped", message=describe(verdict))
+    return '<?xml version="1.0" encoding="utf-8"?>\n' + tostring(suite, encoding="unicode")
 
 
 def write_json(results: dict[str, Verdict], path: Union[str, Path]) -> None:

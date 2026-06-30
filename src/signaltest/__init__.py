@@ -13,6 +13,7 @@ from signaltest.report import (
     format_report,
     read_json,
     to_html,
+    to_junit,
     to_markdown,
     write_json,
 )
@@ -34,6 +35,7 @@ __all__ = [
     "format_report",
     "to_markdown",
     "to_html",
+    "to_junit",
     "write_json",
     "read_json",
     "describe",

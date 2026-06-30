@@ -81,6 +81,18 @@ def test_report_html_format(tmp_path, capsys):
     assert code == 0
 
 
+def test_report_junit_format(tmp_path, capsys):
+    from signaltest.report import write_json
+    from signaltest.stats.gate import FAIL, Verdict
+
+    path = tmp_path / "results.json"
+    write_json({"math": Verdict(FAIL, 0.01, -0.2, "regression")}, path)
+    code = main(["report", str(path), "--format", "junit"])
+    out = capsys.readouterr().out
+    assert "<testsuite" in out
+    assert code == 0
+
+
 def test_power_recommends_samples(tmp_path, capsys):
     path = tmp_path / "b.json"
     k = key("c1", "numeric")

@@ -1,6 +1,8 @@
-from signaltest.report import read_json, to_html, to_markdown, write_json
+from xml.etree.ElementTree import fromstring
+
+from signaltest.report import read_json, to_html, to_junit, to_markdown, write_json
 from signaltest.results import collector
-from signaltest.stats.gate import FAIL, PASS, Verdict
+from signaltest.stats.gate import FAIL, INCONCLUSIVE, PASS, Verdict
 
 
 def test_to_markdown_has_table_and_marker():
@@ -34,6 +36,31 @@ def test_to_html_escapes_case_ids():
     html = to_html(results)
     assert "<script>" not in html
     assert "&lt;script&gt;" in html
+
+
+def test_to_junit_is_valid_xml():
+    results = {
+        "math": Verdict(FAIL, pvalue=0.004, effect=-0.18, reason="regression"),
+        "geo": Verdict(PASS, None, None, "ok"),
+        "slow": Verdict(INCONCLUSIVE, None, None, "underpowered"),
+    }
+    xml = to_junit(results)
+    root = fromstring(xml.split("\n", 1)[1])
+    assert root.tag == "testsuite"
+    assert root.attrib["tests"] == "3"
+    assert root.attrib["failures"] == "1"
+    assert root.attrib["skipped"] == "1"
+    cases = {c.attrib["name"]: c for c in root}
+    assert cases["math"].find("failure") is not None
+    assert cases["slow"].find("skipped") is not None
+    assert list(cases["geo"]) == []
+
+
+def test_to_junit_escapes_attributes():
+    results = {'a"b<c': Verdict(FAIL, 0.01, -0.2, 'bad & "quoted"')}
+    xml = to_junit(results)
+    root = fromstring(xml.split("\n", 1)[1])
+    assert list(root)[0].attrib["name"] == 'a"b<c'
 
 
 def test_write_then_read_roundtrip(tmp_path):
