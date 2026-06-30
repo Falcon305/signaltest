@@ -31,14 +31,16 @@ def collect_scores(case, n):
     return scores
 
 
-def _measure(case, store, n, alpha, min_valid, min_effect):
+def _measure(case, store, n, alpha, min_valid, min_effect, model):
     candidate = [s for s in collect_scores(case, n) if s is not None]
     k = key(case.case_id, case.metric.name)
     data = store.load()
 
-    if k not in data:
-        update_baseline(store, k, make_record(candidate))
-        return Verdict(PASS, None, None, "recorded baseline (cold start)")
+    is_cold = k not in data
+    if is_cold or data[k].get("model") != model:
+        update_baseline(store, k, make_record(candidate, model=model))
+        reason = "recorded baseline (cold start)" if is_cold else "re-recorded baseline (model changed)"
+        return Verdict(PASS, None, None, reason)
 
     baseline = data[k]["scores"]
     n_valid = min(len(baseline), len(candidate))
@@ -73,8 +75,8 @@ def _decide(stats, alpha, min_valid):
     )
 
 
-def check_case(case, store, n=10, alpha=0.05, min_effect=None, min_valid=2):
-    measured = _measure(case, store, n, alpha, min_valid, min_effect)
+def check_case(case, store, n=10, alpha=0.05, min_effect=None, min_valid=2, model=None):
+    measured = _measure(case, store, n, alpha, min_valid, min_effect, model)
     if isinstance(measured, Verdict):
         return measured
     return _decide(measured, alpha, min_valid)
@@ -87,12 +89,12 @@ def assert_no_regression(case, baseline_path, **kwargs):
     return verdict
 
 
-def run_suite(cases, baseline_path, n=10, alpha=0.05, min_effect=None, min_valid=2):
+def run_suite(cases, baseline_path, n=10, alpha=0.05, min_effect=None, min_valid=2, model=None):
     store = BaselineStore(baseline_path)
     results = {}
     pending = []
     for case in cases:
-        measured = _measure(case, store, n, alpha, min_valid, min_effect)
+        measured = _measure(case, store, n, alpha, min_valid, min_effect, model)
         if isinstance(measured, Verdict):
             results[case.case_id] = measured
         else:
