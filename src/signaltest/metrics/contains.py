@@ -9,4 +9,4 @@ class Contains:
     polarity = HIGHER_BETTER
 
     def score(self, output: Any, expected: Any) -> bool:
-        return expected in output
+        return bool(expected in output)

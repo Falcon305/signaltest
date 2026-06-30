@@ -9,4 +9,4 @@ class ExactMatch:
     polarity = HIGHER_BETTER
 
     def score(self, output: Any, expected: Any) -> bool:
-        return output == expected
+        return bool(output == expected)

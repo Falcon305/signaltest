@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 from scipy.stats import bootstrap
@@ -13,7 +14,7 @@ def effect_ci(
     if len(baseline) < 2 or len(candidate) < 2:
         raise ValueError("each group needs at least 2 samples")
 
-    def diff(b, c, axis=0):
+    def diff(b: Any, c: Any, axis: int = 0) -> Any:
         return np.mean(c, axis=axis) - np.mean(b, axis=axis)
 
     result = bootstrap(

@@ -15,7 +15,8 @@ class BaselineStore:
         if not self.path.exists():
             return {}
         try:
-            return json.loads(self.path.read_text())
+            data: dict[str, Any] = json.loads(self.path.read_text())
+            return data
         except ValueError as e:
             raise BaselineError(f"baseline file is corrupt: {self.path}") from e
 

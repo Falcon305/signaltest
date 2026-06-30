@@ -7,7 +7,7 @@ import numpy as np
 
 from signaltest.baseline.record import key, make_record, update_baseline
 from signaltest.baseline.store import BaselineStore
-from signaltest.metrics.base import NUMERIC, Metric
+from signaltest.metrics.base import NUMERIC, Metric, Score
 from signaltest.stats.correction import bh_adjust
 from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate, is_underpowered
 from signaltest.stats.significance import boolean_significance, numeric_significance
@@ -23,8 +23,8 @@ class Case:
     metric: Metric
 
 
-def collect_scores(case: Case, n: int) -> list:
-    scores = []
+def collect_scores(case: Case, n: int) -> list[Optional[Score]]:
+    scores: list[Optional[Score]] = []
     for _ in range(n):
         try:
             scores.append(case.metric.score(case.run(), case.expected))
