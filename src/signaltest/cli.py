@@ -19,6 +19,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     show_cmd = sub.add_parser("show")
     show_cmd.add_argument("path")
     show_cmd.add_argument("case")
+    rm_cmd = sub.add_parser("rm")
+    rm_cmd.add_argument("path")
+    rm_cmd.add_argument("case")
     report_cmd = sub.add_parser("report")
     report_cmd.add_argument("path")
     report_cmd.add_argument("--format", choices=["md", "text"], default="md")
@@ -46,6 +49,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"no baseline for {args.case}")
             return 1
         print(json.dumps(record, indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "rm":
+        store = BaselineStore(args.path)
+        data = store.load()
+        if args.case not in data:
+            print(f"no baseline for {args.case}")
+            return 1
+        del data[args.case]
+        store.save(data)
+        print(f"removed {args.case}")
         return 0
 
     if args.command == "report":

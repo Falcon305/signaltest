@@ -103,3 +103,18 @@ def test_power_missing_case_returns_1(tmp_path, capsys):
     path = tmp_path / "b.json"
     BaselineStore(path).save({})
     assert main(["power", str(path), "nope", "--min-effect", "0.1"]) == 1
+
+
+def test_rm_deletes_entry(tmp_path, capsys):
+    path = tmp_path / "b.json"
+    k = key("c1", "exact_match")
+    update_baseline(BaselineStore(path), k, make_record([1, 0, 1], model=None))
+    code = main(["rm", str(path), k])
+    assert code == 0
+    assert k not in BaselineStore(path).load()
+
+
+def test_rm_missing_case_returns_1(tmp_path, capsys):
+    path = tmp_path / "b.json"
+    BaselineStore(path).save({})
+    assert main(["rm", str(path), "nope"]) == 1

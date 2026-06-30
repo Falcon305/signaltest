@@ -1,3 +1,4 @@
+import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -50,17 +51,21 @@ def _measure(
     min_effect: Optional[float],
     model: Optional[str],
     cache: Optional[ScoreCache] = None,
+    update: bool = False,
 ) -> Union[Verdict, dict[str, Any]]:
     candidate = [s for s in collect_scores(case, n, cache) if s is not None]
     k = key(case.case_id, case.metric.name)
     data = store.load()
 
     is_cold = k not in data
-    if is_cold or data[k].get("model") != model:
+    if update or is_cold or data[k].get("model") != model:
         update_baseline(store, k, make_record(candidate, model=model))
-        reason = (
-            "recorded baseline (cold start)" if is_cold else "re-recorded baseline (model changed)"
-        )
+        if update:
+            reason = "updated baseline"
+        elif is_cold:
+            reason = "recorded baseline (cold start)"
+        else:
+            reason = "re-recorded baseline (model changed)"
         return Verdict(PASS, None, None, reason)
 
     baseline = data[k]["scores"]
@@ -101,12 +106,19 @@ def check_case(
     min_valid: int = 2,
     model: Optional[str] = None,
     cache: Optional[Union[str, Path]] = None,
+    update: bool = False,
 ) -> Verdict:
     score_cache = ScoreCache(cache) if cache is not None else None
-    measured = _measure(case, store, n, alpha, min_valid, min_effect, model, score_cache)
+    measured = _measure(
+        case, store, n, alpha, min_valid, min_effect, model, score_cache, _update(update)
+    )
     verdict = measured if isinstance(measured, Verdict) else _decide(measured, alpha, min_valid)
     collector.record(case.case_id, verdict)
     return verdict
+
+
+def _update(update: bool) -> bool:
+    return update or os.environ.get("SIGNALTEST_UPDATE") == "1"
 
 
 def assert_no_regression(case: Case, baseline_path: Union[str, Path], **kwargs: Any) -> Verdict:
@@ -125,13 +137,17 @@ def run_suite(
     min_valid: int = 2,
     model: Optional[str] = None,
     cache: Optional[Union[str, Path]] = None,
+    update: bool = False,
 ) -> dict[str, Verdict]:
     store = BaselineStore(baseline_path)
     score_cache = ScoreCache(cache) if cache is not None else None
+    do_update = _update(update)
     results: dict[str, Verdict] = {}
     pending = []
     for case in cases:
-        measured = _measure(case, store, n, alpha, min_valid, min_effect, model, score_cache)
+        measured = _measure(
+            case, store, n, alpha, min_valid, min_effect, model, score_cache, do_update
+        )
         if isinstance(measured, Verdict):
             results[case.case_id] = measured
         else:
