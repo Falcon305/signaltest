@@ -49,6 +49,13 @@ only fails when the difference is **statistically significant** *and* clears a
 pip install signaltest
 ```
 
+Or with [uv](https://docs.astral.sh/uv/):
+
+```sh
+uv pip install signaltest   # into the active environment
+uv add signaltest           # into a uv-managed project
+```
+
 ## Quick start
 
 Write a normal pytest test. Give signaltest a way to run your agent, the expected
@@ -198,6 +205,13 @@ python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
 pytest
 ruff check src tests examples
+```
+
+With uv the setup is a single command (it creates the environment for you):
+
+```sh
+uv sync --extra dev
+uv run pytest
 ```
 
 Try the offline demo (cached responses, no API key):
