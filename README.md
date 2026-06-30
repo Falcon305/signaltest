@@ -12,7 +12,7 @@ actually changed in the agent's run.
 
 Local-first. No account, no service, no data leaves your repo.
 
-Status: v0.5.0.
+Status: v0.6.0.
 
 ## Contents
 
@@ -187,6 +187,10 @@ stored baseline samples ┘                      ├─> block only if
   Benjamini-Hochberg procedure, so flakiness doesn't reappear at the suite level.
 - **Power** — cases with too few samples to detect a real change are flagged
   `inconclusive`, never passed silently.
+- **Sequential stopping** (opt-in) — samples in batches and stops as soon as the
+  verdict is clear, spending alpha across the looks so peeking stays honest.
+- **Paired comparison** (opt-in) — when scores are matched per input, a
+  signed-rank test removes between-input variance and needs far fewer samples.
 - **Model versioning** — a baseline records the model it was captured under. If you
   pass a new `model=` and it differs, the baseline is re-recorded instead of
   reported as a regression, so a provider model swap can't masquerade as one.
@@ -205,6 +209,9 @@ Every `assert_no_regression` / `check_case` / `run_suite` call accepts:
 | `cache` | `None` | path to reuse sampled scores (see below) |
 | `workers` | `1` | sample concurrently with this many threads |
 | `test` | `"permutation"` | numeric significance test (`"mannwhitney"` for the rank-based alternative) |
+| `sequential` | `False` | draw samples in batches and stop once the gate is conclusive |
+| `max_n` | `3 × n` | sample cap when `sequential=True` (`n` becomes the minimum) |
+| `looks` | `4` | number of interim checks spread from `n` to `max_n` |
 
 Set project-wide defaults once in `pyproject.toml` instead of passing them on
 every call (an explicit argument always wins):
@@ -234,6 +241,22 @@ assert_no_regression(case, "baselines/math.json", cache=".signaltest-cache.json"
 
 For agents that are slow rather than costly, pass `workers=N` to sample the `n`
 runs concurrently.
+
+### Sequential testing
+
+Most cases haven't changed, so spending a full `n` calls on every one is wasteful.
+With `sequential=True`, signaltest samples in batches and stops as soon as the
+verdict is clear — an obviously-fine case settles in a few runs, and only the
+borderline ones spend the full budget (up to `max_n`):
+
+```python
+assert_no_regression(case, "baselines/math.json", n=5, max_n=30, sequential=True)
+```
+
+It stays rigorous: alpha is spent across the interim looks (so peeking can't
+inflate false positives), and a `pass` is reached early only once the effect's
+confidence interval sits within the no-meaningful-regression threshold. Each
+verdict reports how many runs it actually took.
 
 ## Baselines
 
@@ -288,7 +311,7 @@ jobs:
       pull-requests: write   # required to post the comment
     steps:
       - uses: actions/checkout@v4
-      - uses: Falcon305/signaltest@v0.5.0
+      - uses: Falcon305/signaltest@v0.6.0
         with:
           install: pip install -e ".[dev]"
           paths: tests/regression
@@ -336,6 +359,25 @@ compare_scores(base, cand, kind="numeric")
 This is the natural companion to tools that already repeat each case (Inspect's
 epochs, DeepEval's runs, Braintrust's trials) but only average the results —
 hand signaltest the raw samples and get a real verdict.
+
+When both arrays score the **same inputs in the same order**, pass `paired=True`.
+A matched comparison (Wilcoxon signed-rank) removes the variance between inputs,
+so a small but consistent regression is caught with far fewer samples than an
+unpaired test would need:
+
+```python
+compare_scores(base, cand, kind="numeric", paired=True)
+```
+
+To see *which* inputs drove a regression rather than just the aggregate verdict,
+`top_regressions` returns the matched examples that dropped most:
+
+```python
+from signaltest import top_regressions
+
+for index, delta in top_regressions(base, cand):
+    print(f"sample #{index} dropped {delta:+.2f}")
+```
 
 ## CLI
 

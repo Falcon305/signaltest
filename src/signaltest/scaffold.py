@@ -22,7 +22,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: Falcon305/signaltest@v0.5.0
+      - uses: Falcon305/signaltest@v0.6.0
         with:
           install: pip install -e ".[dev]"
 """

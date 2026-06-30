@@ -5,6 +5,23 @@ All notable changes to this project are documented here. The format is based on
 
 ## Unreleased
 
+## 0.6.0 - 2026-06-30
+
+### Added
+- Sequential testing: `sequential=True` (with `max_n` and `looks`) draws samples
+  in batches and stops as soon as the gate is conclusive, spending alpha across
+  the looks so early stopping does not inflate false positives. A verdict now
+  reports how many `samples` it took.
+- Paired comparison: `compare_scores(..., paired=True)` uses a Wilcoxon
+  signed-rank test and paired bootstrap CI for matched per-input scores, removing
+  between-input variance so a consistent shift is detected with fewer samples.
+- `top_regressions(baseline, candidate)` returns the inputs that dropped most, so
+  reports can show which examples drove a regression.
+
+### Changed
+- Reports list failures first, then inconclusive, then passes, with the biggest
+  drop on top.
+
 ## 0.5.0 - 2026-06-30
 
 ### Added
