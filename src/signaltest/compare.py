@@ -73,6 +73,26 @@ def _measure_paired(
     }
 
 
+def top_regressions(
+    baseline: Sequence[Any],
+    candidate: Sequence[Any],
+    *,
+    k: int = 5,
+    polarity: str = HIGHER_BETTER,
+) -> list[tuple[int, float]]:
+    """The inputs that dropped most, as (index, delta) pairs, worst first.
+
+    Pass matched per-input scores (same order); use it to show which examples
+    drove a regression instead of only the aggregate verdict.
+    """
+    if len(baseline) != len(candidate):
+        raise ValueError("top_regressions needs equal-length samples")
+    deltas = [(i, float(c) - float(b)) for i, (b, c) in enumerate(zip(baseline, candidate))]
+    worse = [d for d in deltas if (d[1] < 0 if polarity == HIGHER_BETTER else d[1] > 0)]
+    worse.sort(key=lambda d: d[1] if polarity == HIGHER_BETTER else -d[1])
+    return worse[:k]
+
+
 def compare_scores(
     baseline: Sequence[Any],
     candidate: Sequence[Any],
