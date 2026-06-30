@@ -1,5 +1,6 @@
 import os
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
@@ -24,19 +25,27 @@ class Case:
     cache_key: Optional[str] = None
 
 
-def collect_scores(case: Case, n: int, cache: Optional[ScoreCache] = None) -> list[Optional[Score]]:
+def _sample(case: Case) -> Optional[Score]:
+    try:
+        return case.metric.score(case.run(), case.expected)
+    except Exception:
+        return None
+
+
+def collect_scores(
+    case: Case, n: int, cache: Optional[ScoreCache] = None, workers: int = 1
+) -> list[Optional[Score]]:
     ckey: Optional[str] = None
     if cache is not None and case.cache_key is not None:
         ckey = f"{case.cache_key}::{case.metric.name}::n{n}"
         cached = cache.get(ckey)
         if cached is not None:
             return cached
-    scores: list[Optional[Score]] = []
-    for _ in range(n):
-        try:
-            scores.append(case.metric.score(case.run(), case.expected))
-        except Exception:
-            scores.append(None)
+    if workers > 1:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            scores = list(pool.map(lambda _: _sample(case), range(n)))
+    else:
+        scores = [_sample(case) for _ in range(n)]
     if cache is not None and ckey is not None:
         cache.put(ckey, scores)
     return scores
@@ -52,8 +61,9 @@ def _measure(
     model: Optional[str],
     cache: Optional[ScoreCache] = None,
     update: bool = False,
+    workers: int = 1,
 ) -> Union[Verdict, dict[str, Any]]:
-    candidate = [s for s in collect_scores(case, n, cache) if s is not None]
+    candidate = [s for s in collect_scores(case, n, cache, workers) if s is not None]
     k = key(case.case_id, case.metric.name)
     data = store.load()
 
@@ -107,10 +117,11 @@ def check_case(
     model: Optional[str] = None,
     cache: Optional[Union[str, Path]] = None,
     update: bool = False,
+    workers: int = 1,
 ) -> Verdict:
     score_cache = ScoreCache(cache) if cache is not None else None
     measured = _measure(
-        case, store, n, alpha, min_valid, min_effect, model, score_cache, _update(update)
+        case, store, n, alpha, min_valid, min_effect, model, score_cache, _update(update), workers
     )
     verdict = measured if isinstance(measured, Verdict) else _decide(measured, alpha, min_valid)
     collector.record(case.case_id, verdict)
@@ -138,6 +149,7 @@ def run_suite(
     model: Optional[str] = None,
     cache: Optional[Union[str, Path]] = None,
     update: bool = False,
+    workers: int = 1,
 ) -> dict[str, Verdict]:
     store = BaselineStore(baseline_path)
     score_cache = ScoreCache(cache) if cache is not None else None
@@ -146,7 +158,7 @@ def run_suite(
     pending = []
     for case in cases:
         measured = _measure(
-            case, store, n, alpha, min_valid, min_effect, model, score_cache, do_update
+            case, store, n, alpha, min_valid, min_effect, model, score_cache, do_update, workers
         )
         if isinstance(measured, Verdict):
             results[case.case_id] = measured
