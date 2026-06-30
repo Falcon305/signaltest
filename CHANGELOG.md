@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## Unreleased
 
+### Changed
+- A sequential `run_suite` now spends alpha across the cases as well as the looks,
+  so suite-wide false positives stay bounded under early stopping (the multiplicity
+  protection the fixed-sample path gets from Benjamini-Hochberg). Single-case
+  `check_case` / `assert_no_regression` are unaffected.
+
 ## 0.6.0 - 2026-06-30
 
 ### Added

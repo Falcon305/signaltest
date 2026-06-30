@@ -76,6 +76,7 @@ def _measure(
     sequential: bool = False,
     max_n: Optional[int] = None,
     looks: int = 4,
+    comparisons: int = 1,
 ) -> Union[Verdict, dict[str, Any]]:
     k = key(case.case_id, case.metric.name)
     data = store.load()
@@ -107,6 +108,7 @@ def _measure(
             alpha=alpha,
             min_effect=min_effect,
             test=test,
+            comparisons=comparisons,
         )
 
     candidate = [s for s in collect_scores(case, n, cache, workers) if s is not None]
@@ -245,6 +247,7 @@ def run_suite(
             sequential,
             max_n,
             looks,
+            len(cases),
         )
         if isinstance(measured, Verdict):
             results[case.case_id] = measured

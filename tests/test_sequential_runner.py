@@ -52,6 +52,24 @@ def test_sequential_inconclusive_when_baseline_too_small(tmp_path):
     assert verdict.status == INCONCLUSIVE
 
 
+def test_suite_sequential_corrects_across_cases(tmp_path):
+    from signaltest.runner import run_suite
+
+    path = tmp_path / "b.json"
+    store = BaselineStore(path)
+    for cid in ("c1", "c2", "c3"):
+        update_baseline(store, key(cid, "score"), make_record([1.0] * 10))
+    cases = [
+        cycling_case("c1", [1.0]),
+        cycling_case("c2", [1.0]),
+        cycling_case("c3", [0.0]),
+    ]
+    results = run_suite(cases, path, n=4, max_n=20, sequential=True)
+    assert results["c1"].status == PASS
+    assert results["c2"].status == PASS
+    assert results["c3"].status == FAIL
+
+
 def test_sequential_default_cap_is_three_times_n(tmp_path):
     path = tmp_path / "b.json"
     seed(path, [0.0, 1.0] * 5)

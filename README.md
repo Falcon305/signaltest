@@ -185,6 +185,8 @@ stored baseline samples ┘                      ├─> block only if
   ```
 - **Multiple comparisons** — across a suite, p-values are adjusted with the
   Benjamini-Hochberg procedure, so flakiness doesn't reappear at the suite level.
+  A sequential suite instead spends alpha across both the looks and the cases, so
+  the suite-wide false-positive rate stays bounded even with early stopping.
 - **Power** — cases with too few samples to detect a real change are flagged
   `inconclusive`, never passed silently.
 - **Sequential stopping** (opt-in) — samples in batches and stops as soon as the
@@ -256,7 +258,10 @@ assert_no_regression(case, "baselines/math.json", n=5, max_n=30, sequential=True
 It stays rigorous: alpha is spent across the interim looks (so peeking can't
 inflate false positives), and a `pass` is reached early only once the effect's
 confidence interval sits within the no-meaningful-regression threshold. Each
-verdict reports how many runs it actually took.
+verdict reports how many runs it actually took. In a `run_suite`, alpha is also
+spent across the cases, so a sequential suite keeps its suite-wide false-positive
+rate bounded — the multiplicity protection that Benjamini-Hochberg gives the
+fixed-sample path.
 
 ## Baselines
 

@@ -32,15 +32,17 @@ def sequential_gate(
     alpha: float = 0.05,
     min_effect: Optional[float] = None,
     test: str = PERMUTATION,
+    comparisons: int = 1,
 ) -> Verdict:
     """Draw candidate samples in batches, stopping as soon as the gate is conclusive.
 
     Alpha is spent across the looks (Bonferroni) so peeking does not inflate false
-    positives; a PASS can be reached early once the effect CI sits within the
-    no-meaningful-regression threshold.
+    positives, and across `comparisons` cases so a suite of sequential gates keeps
+    suite-wide false positives bounded. A PASS can still be reached early once the
+    effect CI sits within the no-meaningful-regression threshold.
     """
     looks = len(sizes)
-    alpha_k = alpha / looks
+    alpha_k = alpha / (looks * comparisons)
     drawn: list[Optional[Any]] = []
     stats: Optional[dict[str, Any]] = None
     for target in sizes:
