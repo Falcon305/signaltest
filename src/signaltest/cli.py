@@ -6,6 +6,7 @@ from typing import Optional
 
 from signaltest import __version__
 from signaltest.baseline.store import BaselineStore
+from signaltest.history import format_trends, read_history
 from signaltest.metrics.base import BOOLEAN, NUMERIC
 from signaltest.report import format_report, read_json, to_html, to_junit, to_markdown
 from signaltest.scaffold import STARTER_TEST, STARTER_WORKFLOW
@@ -37,6 +38,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     init_cmd = sub.add_parser("init")
     init_cmd.add_argument("--dir", default="tests")
     init_cmd.add_argument("--workflow", action="store_true")
+    trends_cmd = sub.add_parser("trends")
+    trends_cmd.add_argument("path")
     args = parser.parse_args(argv)
 
     if args.command == "version":
@@ -86,6 +89,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if args.command == "init":
         return _init(args.dir, args.workflow)
+
+    if args.command == "trends":
+        print(format_trends(read_history(args.path)))
+        return 0
 
     parser.print_help()
     return 0

@@ -1,5 +1,6 @@
 from signaltest.adapters import scores_from_deepeval, scores_from_inspect_log
 from signaltest.compare import compare_scores
+from signaltest.history import append_history, format_trends, read_history
 from signaltest.metrics.base import Metric
 from signaltest.metrics.contains import Contains
 from signaltest.metrics.exact import ExactMatch
@@ -43,6 +44,9 @@ __all__ = [
     "ci_bar",
     "exit_code",
     "render_diff",
+    "append_history",
+    "read_history",
+    "format_trends",
     "Metric",
     "ExactMatch",
     "Contains",

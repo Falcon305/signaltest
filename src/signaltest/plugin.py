@@ -1,6 +1,8 @@
 import os
+from datetime import datetime
 from typing import Any
 
+from signaltest.history import append_history
 from signaltest.report import write_json
 from signaltest.results import collector
 
@@ -10,6 +12,11 @@ def pytest_addoption(parser: Any) -> None:
         "--signaltest-json",
         default=None,
         help="write signaltest results to this JSON path",
+    )
+    parser.addoption(
+        "--signaltest-history",
+        default=None,
+        help="append this run's verdicts to a history JSONL file",
     )
     parser.addoption(
         "--signaltest-update",
@@ -30,6 +37,11 @@ def pytest_sessionstart(session: Any) -> None:
 
 
 def pytest_sessionfinish(session: Any, exitstatus: Any) -> None:
-    path = session.config.getoption("signaltest_json", None)
-    if path:
-        write_json(collector.results, path)
+    json_path = session.config.getoption("signaltest_json", None)
+    if json_path:
+        write_json(collector.results, json_path)
+    history_path = session.config.getoption("signaltest_history", None)
+    if history_path:
+        append_history(
+            collector.results, history_path, datetime.now().isoformat(timespec="seconds")
+        )

@@ -165,3 +165,16 @@ def test_init_refuses_to_overwrite(tmp_path, monkeypatch, capsys):
     main(["init"])
     code = main(["init"])
     assert code == 1
+
+
+def test_trends_renders_history(tmp_path, capsys):
+    from signaltest.history import append_history
+    from signaltest.stats.gate import FAIL, Verdict
+
+    path = tmp_path / "h.jsonl"
+    append_history({"math": Verdict(FAIL, 0.01, -0.2, "bad")}, path, "t1")
+    code = main(["trends", str(path)])
+    out = capsys.readouterr().out
+    assert "1 runs" in out
+    assert "math" in out
+    assert code == 0
