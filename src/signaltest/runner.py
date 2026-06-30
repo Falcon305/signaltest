@@ -6,6 +6,7 @@ import numpy as np
 from signaltest.baseline.record import key, make_record, update_baseline
 from signaltest.baseline.store import BaselineStore
 from signaltest.metrics.base import NUMERIC
+from signaltest.stats.correction import bh_adjust
 from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate, is_underpowered
 from signaltest.stats.significance import boolean_significance, numeric_significance
 
@@ -30,7 +31,7 @@ def collect_scores(case, n):
     return scores
 
 
-def check_case(case, store, n=10, alpha=0.05, min_effect=None, min_valid=2):
+def _measure(case, store, n, alpha, min_valid, min_effect):
     candidate = [s for s in collect_scores(case, n) if s is not None]
     k = key(case.case_id, case.metric.name)
     data = store.load()
@@ -49,20 +50,34 @@ def check_case(case, store, n=10, alpha=0.05, min_effect=None, min_valid=2):
     else:
         pvalue = boolean_significance(baseline, candidate)
 
-    effect = float(np.mean(candidate) - np.mean(baseline))
-    if min_effect is None:
-        min_effect = DEFAULT_MIN_EFFECT[case.metric.kind]
+    return {
+        "pvalue": pvalue,
+        "effect": float(np.mean(candidate) - np.mean(baseline)),
+        "polarity": case.metric.polarity,
+        "min_effect": DEFAULT_MIN_EFFECT[case.metric.kind] if min_effect is None else min_effect,
+        "n_valid": n_valid,
+        "underpowered": is_underpowered(len(baseline), len(candidate), alpha),
+    }
 
+
+def _decide(stats, alpha, min_valid):
     return decide_gate(
-        pvalue,
-        effect,
-        polarity=case.metric.polarity,
+        stats["pvalue"],
+        stats["effect"],
+        polarity=stats["polarity"],
         alpha=alpha,
-        min_effect=min_effect,
-        n_valid=n_valid,
+        min_effect=stats["min_effect"],
+        n_valid=stats["n_valid"],
         min_valid=min_valid,
-        underpowered=is_underpowered(len(baseline), len(candidate), alpha),
+        underpowered=stats["underpowered"],
     )
+
+
+def check_case(case, store, n=10, alpha=0.05, min_effect=None, min_valid=2):
+    measured = _measure(case, store, n, alpha, min_valid, min_effect)
+    if isinstance(measured, Verdict):
+        return measured
+    return _decide(measured, alpha, min_valid)
 
 
 def assert_no_regression(case, baseline_path, **kwargs):
@@ -70,3 +85,21 @@ def assert_no_regression(case, baseline_path, **kwargs):
     if verdict.status == FAIL:
         raise AssertionError(f"regression in {case.case_id}: {verdict.reason}")
     return verdict
+
+
+def run_suite(cases, baseline_path, n=10, alpha=0.05, min_effect=None, min_valid=2):
+    store = BaselineStore(baseline_path)
+    results = {}
+    pending = []
+    for case in cases:
+        measured = _measure(case, store, n, alpha, min_valid, min_effect)
+        if isinstance(measured, Verdict):
+            results[case.case_id] = measured
+        else:
+            pending.append((case, measured))
+
+    adjusted = bh_adjust([stats["pvalue"] for _, stats in pending])
+    for (case, stats), pvalue in zip(pending, adjusted):
+        stats = {**stats, "pvalue": pvalue}
+        results[case.case_id] = _decide(stats, alpha, min_valid)
+    return results
