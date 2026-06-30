@@ -17,7 +17,7 @@ from signaltest.report import describe
 from signaltest.results import collector
 from signaltest.stats.correction import bh_adjust
 from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate
-from signaltest.stats.sequential import sample_schedule, sequential_gate
+from signaltest.stats.sequential import OBRIEN_FLEMING, sample_schedule, sequential_gate
 from signaltest.stats.significance import PERMUTATION
 
 _UNSET: Any = object()
@@ -77,6 +77,7 @@ def _measure(
     max_n: Optional[int] = None,
     looks: int = 4,
     comparisons: int = 1,
+    spending: str = OBRIEN_FLEMING,
 ) -> Union[Verdict, dict[str, Any]]:
     k = key(case.case_id, case.metric.name)
     data = store.load()
@@ -109,6 +110,7 @@ def _measure(
             min_effect=min_effect,
             test=test,
             comparisons=comparisons,
+            spending=spending,
         )
 
     candidate = [s for s in collect_scores(case, n, cache, workers) if s is not None]
@@ -158,6 +160,7 @@ def check_case(
     sequential: Optional[bool] = None,
     max_n: Optional[int] = None,
     looks: Optional[int] = None,
+    spending: Optional[str] = None,
 ) -> Verdict:
     n = cfg.get("n") if n is None else n
     alpha = cfg.get("alpha") if alpha is None else alpha
@@ -168,6 +171,7 @@ def check_case(
     sequential = cfg.get("sequential") if sequential is None else sequential
     max_n = cfg.get("max_n") if max_n is None else max_n
     looks = cfg.get("looks") if looks is None else looks
+    spending = cfg.get("spending") if spending is None else spending
     score_cache = ScoreCache(cache) if cache is not None else None
     measured = _measure(
         case,
@@ -184,6 +188,8 @@ def check_case(
         sequential,
         max_n,
         looks,
+        1,
+        spending,
     )
     verdict = measured if isinstance(measured, Verdict) else _decide(measured, alpha, min_valid)
     collector.record(case.case_id, verdict)
@@ -216,6 +222,7 @@ def run_suite(
     sequential: Optional[bool] = None,
     max_n: Optional[int] = None,
     looks: Optional[int] = None,
+    spending: Optional[str] = None,
 ) -> dict[str, Verdict]:
     n = cfg.get("n") if n is None else n
     alpha = cfg.get("alpha") if alpha is None else alpha
@@ -226,6 +233,7 @@ def run_suite(
     sequential = cfg.get("sequential") if sequential is None else sequential
     max_n = cfg.get("max_n") if max_n is None else max_n
     looks = cfg.get("looks") if looks is None else looks
+    spending = cfg.get("spending") if spending is None else spending
     store = BaselineStore(baseline_path)
     score_cache = ScoreCache(cache) if cache is not None else None
     do_update = _update(update)
@@ -248,6 +256,7 @@ def run_suite(
             max_n,
             looks,
             len(cases),
+            spending,
         )
         if isinstance(measured, Verdict):
             results[case.case_id] = measured

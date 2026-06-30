@@ -214,6 +214,7 @@ Every `assert_no_regression` / `check_case` / `run_suite` call accepts:
 | `sequential` | `False` | draw samples in batches and stop once the gate is conclusive |
 | `max_n` | `3 × n` | sample cap when `sequential=True` (`n` becomes the minimum) |
 | `looks` | `4` | number of interim checks spread from `n` to `max_n` |
+| `spending` | `"obrien_fleming"` | how alpha is split across looks (`"pocock"` spends it evenly) |
 
 Set project-wide defaults once in `pyproject.toml` instead of passing them on
 every call (an explicit argument always wins):
@@ -256,8 +257,11 @@ assert_no_regression(case, "baselines/math.json", n=5, max_n=30, sequential=True
 ```
 
 It stays rigorous: alpha is spent across the interim looks (so peeking can't
-inflate false positives), and a `pass` is reached early only once the effect's
-confidence interval sits within the no-meaningful-regression threshold. Each
+inflate false positives) using an O'Brien-Fleming schedule by default — almost
+none early, most at the final look — so an early stop demands strong evidence
+while the final decision keeps nearly full power (`spending="pocock"` spreads it
+evenly). A `pass` is reached early only once the effect's confidence interval
+sits within the no-meaningful-regression threshold. Each
 verdict reports how many runs it actually took. In a `run_suite`, alpha is also
 spent across the cases, so a sequential suite keeps its suite-wide false-positive
 rate bounded — the multiplicity protection that Benjamini-Hochberg gives the
