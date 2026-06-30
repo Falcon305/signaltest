@@ -1,5 +1,7 @@
 # signaltest
 
+[![ci](https://github.com/Falcon305/signaltest/actions/workflows/ci.yml/badge.svg)](https://github.com/Falcon305/signaltest/actions/workflows/ci.yml)
+
 Regression tests for LLM agents that don't fail your CI on noise.
 
 LLMs are non-deterministic, so naive eval checks flake: a score drifts a point on
