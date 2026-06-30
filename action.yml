@@ -24,7 +24,7 @@ runs:
     - shell: bash
       run: ${{ inputs.install }}
     - shell: bash
-      run: pip install signaltest
+      run: pip install signaltest pytest
     - shell: bash
       run: pytest ${{ inputs.paths }} --signaltest-json signaltest-results.json
     - if: always()
