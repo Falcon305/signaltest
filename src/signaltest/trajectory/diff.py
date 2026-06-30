@@ -1,4 +1,9 @@
-def render_diff(baseline, candidate):
+from collections.abc import Sequence
+
+from signaltest.trajectory.model import Step
+
+
+def render_diff(baseline: Sequence[Step], candidate: Sequence[Step]) -> str:
     lines = []
     for i in range(max(len(baseline), len(candidate))):
         b = baseline[i] if i < len(baseline) else None
@@ -13,5 +18,5 @@ def render_diff(baseline, candidate):
     return "\n".join(lines)
 
 
-def _fmt(step):
+def _fmt(step: Step) -> str:
     return f"{step.tool}({step.args})"

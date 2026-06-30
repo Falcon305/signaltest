@@ -1,7 +1,7 @@
-from signaltest.stats.gate import FAIL, INCONCLUSIVE, PASS
+from signaltest.stats.gate import FAIL, INCONCLUSIVE, PASS, Verdict
 
 
-def format_report(results):
+def format_report(results: dict[str, Verdict]) -> str:
     counts = {PASS: 0, FAIL: 0, INCONCLUSIVE: 0}
     lines = []
     for case_id, verdict in results.items():
@@ -11,5 +11,5 @@ def format_report(results):
     return "\n".join(lines)
 
 
-def exit_code(results):
+def exit_code(results: dict[str, Verdict]) -> int:
     return 1 if any(v.status == FAIL for v in results.values()) else 0

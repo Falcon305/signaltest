@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from math import comb
+from typing import Optional
 
 PASS = "pass"
 FAIL = "fail"
@@ -9,22 +10,22 @@ INCONCLUSIVE = "inconclusive"
 @dataclass
 class Verdict:
     status: str
-    pvalue: float
-    effect: float
+    pvalue: Optional[float]
+    effect: Optional[float]
     reason: str
 
 
 def decide_gate(
-    pvalue,
-    effect,
+    pvalue: float,
+    effect: float,
     *,
-    polarity="higher_better",
-    alpha=0.05,
-    min_effect=0.0,
-    n_valid,
-    min_valid=2,
-    underpowered=False,
-):
+    polarity: str = "higher_better",
+    alpha: float = 0.05,
+    min_effect: float = 0.0,
+    n_valid: int,
+    min_valid: int = 2,
+    underpowered: bool = False,
+) -> Verdict:
     if n_valid < min_valid:
         return Verdict(INCONCLUSIVE, pvalue, effect, f"only {n_valid} valid runs, need {min_valid}")
 
@@ -39,6 +40,6 @@ def decide_gate(
     return Verdict(PASS, pvalue, effect, "no significant regression")
 
 
-def is_underpowered(n_baseline, n_candidate, alpha=0.05):
+def is_underpowered(n_baseline: int, n_candidate: int, alpha: float = 0.05) -> bool:
     smallest_possible_p = 2 / comb(n_baseline + n_candidate, n_baseline)
     return smallest_possible_p > alpha

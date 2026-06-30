@@ -1,3 +1,5 @@
+from typing import Any
+
 from signaltest.metrics.base import BOOLEAN, HIGHER_BETTER
 
 
@@ -6,5 +8,5 @@ class Contains:
     kind = BOOLEAN
     polarity = HIGHER_BETTER
 
-    def score(self, output, expected):
+    def score(self, output: Any, expected: Any) -> bool:
         return expected in output

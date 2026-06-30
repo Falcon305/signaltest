@@ -1,11 +1,13 @@
 import argparse
 import json
+from collections.abc import Sequence
+from typing import Optional
 
 from signaltest import __version__
 from signaltest.baseline.store import BaselineStore
 
 
-def main(argv=None):
+def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(prog="signaltest")
     sub = parser.add_subparsers(dest="command")
     sub.add_parser("version")

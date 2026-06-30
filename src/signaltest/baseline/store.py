@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Any, Union
 
 
 class BaselineError(Exception):
@@ -7,10 +8,10 @@ class BaselineError(Exception):
 
 
 class BaselineStore:
-    def __init__(self, path):
+    def __init__(self, path: Union[str, Path]) -> None:
         self.path = Path(path)
 
-    def load(self):
+    def load(self) -> dict[str, Any]:
         if not self.path.exists():
             return {}
         try:
@@ -18,6 +19,6 @@ class BaselineStore:
         except ValueError as e:
             raise BaselineError(f"baseline file is corrupt: {self.path}") from e
 
-    def save(self, data):
+    def save(self, data: dict[str, Any]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(data, indent=2, sort_keys=True))

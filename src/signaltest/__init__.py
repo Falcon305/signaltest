@@ -1,3 +1,4 @@
+from signaltest.metrics.base import Metric
 from signaltest.metrics.contains import Contains
 from signaltest.metrics.exact import ExactMatch
 from signaltest.metrics.judge import LLMJudge
@@ -17,6 +18,7 @@ __all__ = [
     "run_suite",
     "format_report",
     "exit_code",
+    "Metric",
     "ExactMatch",
     "Contains",
     "Numeric",

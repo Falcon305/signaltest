@@ -1,8 +1,12 @@
+from collections.abc import Sequence
+
 import numpy as np
 from scipy.stats import fisher_exact, permutation_test
 
 
-def numeric_significance(baseline, candidate, rng=0):
+def numeric_significance(
+    baseline: Sequence[float], candidate: Sequence[float], rng: int = 0
+) -> float:
     if len(baseline) < 2 or len(candidate) < 2:
         raise ValueError("each group needs at least 2 samples")
 
@@ -20,7 +24,7 @@ def numeric_significance(baseline, candidate, rng=0):
     return float(result.pvalue)
 
 
-def boolean_significance(baseline, candidate):
+def boolean_significance(baseline: Sequence[bool], candidate: Sequence[bool]) -> float:
     if len(baseline) < 1 or len(candidate) < 1:
         raise ValueError("each group needs at least 1 sample")
     b_true = sum(1 for x in baseline if x)

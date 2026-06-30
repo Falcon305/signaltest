@@ -1,11 +1,13 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Callable
+from pathlib import Path
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 
 from signaltest.baseline.record import key, make_record, update_baseline
 from signaltest.baseline.store import BaselineStore
-from signaltest.metrics.base import NUMERIC
+from signaltest.metrics.base import NUMERIC, Metric
 from signaltest.stats.correction import bh_adjust
 from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate, is_underpowered
 from signaltest.stats.significance import boolean_significance, numeric_significance
@@ -18,10 +20,10 @@ class Case:
     case_id: str
     run: Callable[[], Any]
     expected: Any
-    metric: Any
+    metric: Metric
 
 
-def collect_scores(case, n):
+def collect_scores(case: Case, n: int) -> list:
     scores = []
     for _ in range(n):
         try:
@@ -31,7 +33,15 @@ def collect_scores(case, n):
     return scores
 
 
-def _measure(case, store, n, alpha, min_valid, min_effect, model):
+def _measure(
+    case: Case,
+    store: BaselineStore,
+    n: int,
+    alpha: float,
+    min_valid: int,
+    min_effect: Optional[float],
+    model: Optional[str],
+) -> Union[Verdict, dict[str, Any]]:
     candidate = [s for s in collect_scores(case, n) if s is not None]
     k = key(case.case_id, case.metric.name)
     data = store.load()
@@ -62,7 +72,7 @@ def _measure(case, store, n, alpha, min_valid, min_effect, model):
     }
 
 
-def _decide(stats, alpha, min_valid):
+def _decide(stats: dict[str, Any], alpha: float, min_valid: int) -> Verdict:
     return decide_gate(
         stats["pvalue"],
         stats["effect"],
@@ -75,23 +85,39 @@ def _decide(stats, alpha, min_valid):
     )
 
 
-def check_case(case, store, n=10, alpha=0.05, min_effect=None, min_valid=2, model=None):
+def check_case(
+    case: Case,
+    store: BaselineStore,
+    n: int = 10,
+    alpha: float = 0.05,
+    min_effect: Optional[float] = None,
+    min_valid: int = 2,
+    model: Optional[str] = None,
+) -> Verdict:
     measured = _measure(case, store, n, alpha, min_valid, min_effect, model)
     if isinstance(measured, Verdict):
         return measured
     return _decide(measured, alpha, min_valid)
 
 
-def assert_no_regression(case, baseline_path, **kwargs):
+def assert_no_regression(case: Case, baseline_path: Union[str, Path], **kwargs: Any) -> Verdict:
     verdict = check_case(case, BaselineStore(baseline_path), **kwargs)
     if verdict.status == FAIL:
         raise AssertionError(f"regression in {case.case_id}: {verdict.reason}")
     return verdict
 
 
-def run_suite(cases, baseline_path, n=10, alpha=0.05, min_effect=None, min_valid=2, model=None):
+def run_suite(
+    cases: Sequence[Case],
+    baseline_path: Union[str, Path],
+    n: int = 10,
+    alpha: float = 0.05,
+    min_effect: Optional[float] = None,
+    min_valid: int = 2,
+    model: Optional[str] = None,
+) -> dict[str, Verdict]:
     store = BaselineStore(baseline_path)
-    results = {}
+    results: dict[str, Verdict] = {}
     pending = []
     for case in cases:
         measured = _measure(case, store, n, alpha, min_valid, min_effect, model)

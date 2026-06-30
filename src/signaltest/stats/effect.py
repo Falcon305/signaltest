@@ -1,8 +1,15 @@
+from collections.abc import Sequence
+
 import numpy as np
 from scipy.stats import bootstrap
 
 
-def effect_ci(baseline, candidate, confidence=0.95, rng=0):
+def effect_ci(
+    baseline: Sequence[float],
+    candidate: Sequence[float],
+    confidence: float = 0.95,
+    rng: int = 0,
+) -> tuple[float, float]:
     if len(baseline) < 2 or len(candidate) < 2:
         raise ValueError("each group needs at least 2 samples")
 
