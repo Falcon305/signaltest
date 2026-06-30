@@ -1,1 +1,28 @@
+from signaltest.metrics.contains import Contains
+from signaltest.metrics.exact import ExactMatch
+from signaltest.metrics.numeric import Numeric
+from signaltest.metrics.trajectory import TrajectoryMatch
+from signaltest.report import exit_code, format_report
+from signaltest.runner import Case, assert_no_regression, check_case, run_suite
+from signaltest.stats.gate import FAIL, INCONCLUSIVE, PASS
+from signaltest.trajectory.model import Step
+
 __version__ = "0.1.0.dev0"
+
+__all__ = [
+    "Case",
+    "assert_no_regression",
+    "check_case",
+    "run_suite",
+    "format_report",
+    "exit_code",
+    "ExactMatch",
+    "Contains",
+    "Numeric",
+    "TrajectoryMatch",
+    "Step",
+    "PASS",
+    "FAIL",
+    "INCONCLUSIVE",
+    "__version__",
+]
