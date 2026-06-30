@@ -12,7 +12,7 @@ actually changed in the agent's run.
 
 Local-first. No account, no service, no data leaves your repo.
 
-Status: v0.2.0.
+Status: v0.3.0.
 
 ## Contents
 
@@ -71,8 +71,8 @@ uv add signaltest           # into a uv-managed project
 
 ## Quick start
 
-Write a normal pytest test. Give signaltest a way to run your agent, the expected
-output, and a metric.
+Run `signaltest init` to drop a starter test in `tests/`, or write one yourself.
+Give signaltest a way to run your agent, the expected output, and a metric.
 
 ```python
 from signaltest import Case, assert_no_regression, ExactMatch
@@ -194,6 +194,7 @@ Every `assert_no_regression` / `check_case` / `run_suite` call accepts:
 | `min_valid` | `2` | fewer valid samples than this → `inconclusive` |
 | `model` | `None` | model id recorded with the baseline |
 | `cache` | `None` | path to reuse sampled scores (see below) |
+| `workers` | `1` | sample concurrently with this many threads |
 
 When a case comes back `inconclusive`, the reason tells you roughly how many
 samples it would take to detect the effect you set — e.g.
@@ -210,6 +211,9 @@ again:
 case = Case("math", run=my_agent, expected="4", metric=ExactMatch(), cache_key="v1")
 assert_no_regression(case, "baselines/math.json", cache=".signaltest-cache.json")
 ```
+
+For agents that are slow rather than costly, pass `workers=N` to sample the `n`
+runs concurrently.
 
 ## Baselines
 
@@ -253,7 +257,7 @@ jobs:
       pull-requests: write   # required to post the comment
     steps:
       - uses: actions/checkout@v4
-      - uses: Falcon305/signaltest@v0.2.0
+      - uses: Falcon305/signaltest@v0.3.0
         with:
           install: pip install -e ".[dev]"
           paths: tests/regression
@@ -268,8 +272,9 @@ jobs:
 
 The table is produced from a results file your tests write with
 `pytest --signaltest-json results.json`; `signaltest report results.json`
-renders it (`--format text` or `--format html` too), so you can reproduce the
-exact comment locally.
+renders it (`--format text`, `html`, or `junit` too), so you can reproduce the
+exact comment locally. Use `--format junit` to emit a JUnit XML file that GitHub,
+GitLab, and Jenkins render natively in their test UI.
 
 ## Gating scores from other tools
 
@@ -285,6 +290,18 @@ verdict = compare_scores(baseline_scores, candidate_scores, kind="numeric")
 print(verdict.status, verdict.reason)
 ```
 
+There are adapters for the two most common sources. Inspect AI repeats each
+sample with epochs; DeepEval gives a metric score per test — both produce exactly
+the arrays the gate wants:
+
+```python
+from signaltest import compare_scores, scores_from_inspect_log, scores_from_deepeval
+
+base = scores_from_inspect_log(baseline_log, "accuracy")
+cand = scores_from_inspect_log(candidate_log, "accuracy")
+compare_scores(base, cand, kind="numeric")
+```
+
 This is the natural companion to tools that already repeat each case (Inspect's
 epochs, DeepEval's runs, Braintrust's trials) but only average the results —
 hand signaltest the raw samples and get a real verdict.
@@ -292,11 +309,12 @@ hand signaltest the raw samples and get a real verdict.
 ## CLI
 
 ```sh
+signaltest init                             # scaffold a starter test (--workflow for CI too)
 signaltest version
 signaltest baselines baselines/agent.json   # list recorded cases
 signaltest show baselines/agent.json math::exact_match
 signaltest rm baselines/agent.json math::exact_match   # drop one baseline entry
-signaltest report results.json              # markdown table (--format text|html)
+signaltest report results.json              # markdown table (--format text|html|junit)
 signaltest power baselines/agent.json math::exact_match --min-effect 0.1
 ```
 

@@ -5,6 +5,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## Unreleased
 
+## 0.3.0 - 2026-06-30
+
+### Added
+- Adapters to gate scores from other tools: `scores_from_inspect_log` and
+  `scores_from_deepeval` feed `compare_scores`.
+- JUnit XML report output (`signaltest report --format junit`, `to_junit`) so CI
+  systems render results natively.
+- Opt-in parallel sampling via `workers=` on `check_case` / `run_suite`.
+- `signaltest init` scaffolds a starter regression test and, with `--workflow`,
+  a GitHub Actions workflow.
+
 ## 0.2.0 - 2026-06-30
 
 ### Added
