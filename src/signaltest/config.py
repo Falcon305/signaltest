@@ -14,6 +14,9 @@ _DEFAULTS: dict[str, Any] = {
     "min_valid": 2,
     "workers": 1,
     "test": "permutation",
+    "sequential": False,
+    "max_n": None,
+    "looks": 4,
 }
 
 _CONFIG: dict[str, Any] = dict(_DEFAULTS)

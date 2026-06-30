@@ -17,6 +17,7 @@ from signaltest.report import describe
 from signaltest.results import collector
 from signaltest.stats.correction import bh_adjust
 from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate
+from signaltest.stats.sequential import sample_schedule, sequential_gate
 from signaltest.stats.significance import PERMUTATION
 
 _UNSET: Any = object()
@@ -72,13 +73,16 @@ def _measure(
     update: bool = False,
     workers: int = 1,
     test: str = PERMUTATION,
+    sequential: bool = False,
+    max_n: Optional[int] = None,
+    looks: int = 4,
 ) -> Union[Verdict, dict[str, Any]]:
-    candidate = [s for s in collect_scores(case, n, cache, workers) if s is not None]
     k = key(case.case_id, case.metric.name)
     data = store.load()
 
     is_cold = k not in data
     if update or is_cold or data[k].get("model") != model:
+        candidate = [s for s in collect_scores(case, n, cache, workers) if s is not None]
         update_baseline(store, k, make_record(candidate, model=model))
         if update:
             reason = "updated baseline"
@@ -89,6 +93,23 @@ def _measure(
         return Verdict(PASS, None, None, reason)
 
     baseline = data[k]["scores"]
+    if sequential:
+        if len(baseline) < min_valid:
+            return decide_gate(1.0, 0.0, n_valid=len(baseline), min_valid=min_valid)
+        cap = max_n if max_n is not None else n * 3
+        sizes = sample_schedule(n, max(cap, n), looks)
+        return sequential_gate(
+            baseline,
+            lambda: _sample(case),
+            kind=case.metric.kind,
+            polarity=case.metric.polarity,
+            sizes=sizes,
+            alpha=alpha,
+            min_effect=min_effect,
+            test=test,
+        )
+
+    candidate = [s for s in collect_scores(case, n, cache, workers) if s is not None]
     n_valid = min(len(baseline), len(candidate))
     if n_valid < min_valid:
         return decide_gate(1.0, 0.0, n_valid=n_valid, min_valid=min_valid)
@@ -132,6 +153,9 @@ def check_case(
     update: bool = False,
     workers: Optional[int] = None,
     test: Optional[str] = None,
+    sequential: Optional[bool] = None,
+    max_n: Optional[int] = None,
+    looks: Optional[int] = None,
 ) -> Verdict:
     n = cfg.get("n") if n is None else n
     alpha = cfg.get("alpha") if alpha is None else alpha
@@ -139,6 +163,9 @@ def check_case(
     min_valid = cfg.get("min_valid") if min_valid is None else min_valid
     workers = cfg.get("workers") if workers is None else workers
     test = cfg.get("test") if test is None else test
+    sequential = cfg.get("sequential") if sequential is None else sequential
+    max_n = cfg.get("max_n") if max_n is None else max_n
+    looks = cfg.get("looks") if looks is None else looks
     score_cache = ScoreCache(cache) if cache is not None else None
     measured = _measure(
         case,
@@ -152,6 +179,9 @@ def check_case(
         _update(update),
         workers,
         test,
+        sequential,
+        max_n,
+        looks,
     )
     verdict = measured if isinstance(measured, Verdict) else _decide(measured, alpha, min_valid)
     collector.record(case.case_id, verdict)
@@ -181,6 +211,9 @@ def run_suite(
     update: bool = False,
     workers: Optional[int] = None,
     test: Optional[str] = None,
+    sequential: Optional[bool] = None,
+    max_n: Optional[int] = None,
+    looks: Optional[int] = None,
 ) -> dict[str, Verdict]:
     n = cfg.get("n") if n is None else n
     alpha = cfg.get("alpha") if alpha is None else alpha
@@ -188,6 +221,9 @@ def run_suite(
     min_valid = cfg.get("min_valid") if min_valid is None else min_valid
     workers = cfg.get("workers") if workers is None else workers
     test = cfg.get("test") if test is None else test
+    sequential = cfg.get("sequential") if sequential is None else sequential
+    max_n = cfg.get("max_n") if max_n is None else max_n
+    looks = cfg.get("looks") if looks is None else looks
     store = BaselineStore(baseline_path)
     score_cache = ScoreCache(cache) if cache is not None else None
     do_update = _update(update)
@@ -206,6 +242,9 @@ def run_suite(
             do_update,
             workers,
             test,
+            sequential,
+            max_n,
+            looks,
         )
         if isinstance(measured, Verdict):
             results[case.case_id] = measured

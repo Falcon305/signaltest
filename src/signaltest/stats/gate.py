@@ -15,6 +15,7 @@ class Verdict:
     reason: str
     ci_low: Optional[float] = None
     ci_high: Optional[float] = None
+    samples: Optional[int] = None
 
 
 def decide_gate(
