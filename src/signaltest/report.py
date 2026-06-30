@@ -28,6 +28,32 @@ def _stats(verdict: Verdict) -> str:
     return ", ".join(parts)
 
 
+def ci_bar(verdict: Verdict, width: int = 21) -> str:
+    """A Unicode bar showing the effect's 95% CI against zero.
+
+    If the bar straddles the centre mark the interval includes zero (not a clear
+    regression); if it sits entirely to one side, zero is excluded.
+    """
+    if verdict.ci_low is None or verdict.ci_high is None:
+        return ""
+    mid = (width - 1) // 2
+    span = max(abs(verdict.ci_low), abs(verdict.ci_high), 1e-9)
+
+    def position(value: float) -> int:
+        return max(0, min(width - 1, round(value / span * mid) + mid))
+
+    low, high = position(verdict.ci_low), position(verdict.ci_high)
+    cells = []
+    for i in range(width):
+        if i == mid:
+            cells.append("╋" if low <= i <= high else "│")
+        elif low <= i <= high:
+            cells.append("━")
+        else:
+            cells.append("·")
+    return "".join(cells)
+
+
 def _counts(results: dict[str, Verdict]) -> dict[str, int]:
     counts = {PASS: 0, FAIL: 0, INCONCLUSIVE: 0}
     for verdict in results.values():
@@ -53,12 +79,14 @@ def to_markdown(results: dict[str, Verdict]) -> str:
         "<!-- signaltest -->",
         "### signaltest",
         "",
-        "| Case | Status | Detail |",
-        "| --- | --- | --- |",
+        "| Case | Status | Detail | 95% CI |",
+        "| --- | --- | --- | --- |",
     ]
     for case_id, verdict in results.items():
         icon = ICON.get(verdict.status, "")
-        lines.append(f"| {case_id} | {icon} {verdict.status} | {describe(verdict)} |")
+        bar = ci_bar(verdict)
+        cell = f"`{bar}`" if bar else ""
+        lines.append(f"| {case_id} | {icon} {verdict.status} | {describe(verdict)} | {cell} |")
     lines.append("")
     lines.append(f"**{_summary(results)}**")
     return "\n".join(lines)
@@ -68,10 +96,12 @@ def to_html(results: dict[str, Verdict]) -> str:
     rows = []
     for case_id, verdict in results.items():
         color = COLOR.get(verdict.status, "#000")
+        bar = ci_bar(verdict)
         rows.append(
             f"<tr><td>{escape(case_id)}</td>"
             f'<td style="color:{color};font-weight:600">{verdict.status}</td>'
-            f"<td>{escape(describe(verdict))}</td></tr>"
+            f"<td>{escape(describe(verdict))}</td>"
+            f'<td style="font-family:monospace">{escape(bar)}</td></tr>'
         )
     body = "\n".join(rows)
     return (
@@ -82,7 +112,8 @@ def to_html(results: dict[str, Verdict]) -> str:
         "th,td{border:1px solid #d0d7de;padding:.4rem .6rem;text-align:left}"
         "th{background:#f6f8fa}</style></head>\n"
         "<body><h2>signaltest</h2>\n"
-        "<table><thead><tr><th>Case</th><th>Status</th><th>Detail</th></tr></thead>\n"
+        "<table><thead><tr><th>Case</th><th>Status</th><th>Detail</th>"
+        "<th>95% CI</th></tr></thead>\n"
         f"<tbody>\n{body}\n</tbody></table>\n"
         f"<p><strong>{_summary(results)}</strong></p>\n"
         "</body></html>\n"

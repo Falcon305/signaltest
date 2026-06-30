@@ -12,7 +12,7 @@ def test_to_markdown_has_table_and_marker():
     }
     md = to_markdown(results)
     assert "<!-- signaltest -->" in md
-    assert "| Case | Status | Detail |" in md
+    assert "| Case | Status | Detail | 95% CI |" in md
     assert "❌ fail" in md
     assert "✅ pass" in md
     assert "**1 passed, 1 failed, 0 inconclusive**" in md

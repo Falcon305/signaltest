@@ -8,6 +8,7 @@ from signaltest.metrics.numeric import Numeric
 from signaltest.metrics.rag import AnswerRelevancy, Faithfulness
 from signaltest.metrics.trajectory import TrajectoryMatch
 from signaltest.report import (
+    ci_bar,
     describe,
     exit_code,
     format_report,
@@ -39,6 +40,7 @@ __all__ = [
     "write_json",
     "read_json",
     "describe",
+    "ci_bar",
     "exit_code",
     "render_diff",
     "Metric",
