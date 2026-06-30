@@ -8,6 +8,7 @@ import numpy as np
 from signaltest.baseline.record import key, make_record, update_baseline
 from signaltest.baseline.store import BaselineStore
 from signaltest.metrics.base import NUMERIC, Metric, Score
+from signaltest.report import describe
 from signaltest.stats.correction import bh_adjust
 from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate, is_underpowered
 from signaltest.stats.significance import boolean_significance, numeric_significance
@@ -103,7 +104,7 @@ def check_case(
 def assert_no_regression(case: Case, baseline_path: Union[str, Path], **kwargs: Any) -> Verdict:
     verdict = check_case(case, BaselineStore(baseline_path), **kwargs)
     if verdict.status == FAIL:
-        raise AssertionError(f"regression in {case.case_id}: {verdict.reason}")
+        raise AssertionError(f"regression in {case.case_id}: {describe(verdict)}")
     return verdict
 
 

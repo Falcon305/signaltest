@@ -99,6 +99,15 @@ raise SystemExit(exit_code(results))
 `format_report` prints a per-case summary; `exit_code` returns `1` if any case
 regressed, `0` otherwise — drop it straight into a CI step.
 
+A failing case reports the measured effect size and p-value, so you see *how
+big* the regression is, not just that one happened:
+
+```
+PASS          geo: no significant regression
+FAIL          math: significant regression past the effect floor (effect=-0.180, p=0.004)
+1 passed, 1 failed, 0 inconclusive
+```
+
 ## Metrics
 
 A metric declares its `kind` (numeric or boolean, which picks the significance
