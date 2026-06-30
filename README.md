@@ -12,7 +12,7 @@ actually changed in the agent's run.
 
 Local-first. No account, no service, no data leaves your repo.
 
-Status: v0.4.0.
+Status: v0.5.0.
 
 ## Contents
 
@@ -206,6 +206,16 @@ Every `assert_no_regression` / `check_case` / `run_suite` call accepts:
 | `workers` | `1` | sample concurrently with this many threads |
 | `test` | `"permutation"` | numeric significance test (`"mannwhitney"` for the rank-based alternative) |
 
+Set project-wide defaults once in `pyproject.toml` instead of passing them on
+every call (an explicit argument always wins):
+
+```toml
+[tool.signaltest]
+n = 20
+alpha = 0.01
+test = "mannwhitney"
+```
+
 When a case comes back `inconclusive`, the reason tells you roughly how many
 samples it would take to detect the effect you set — e.g.
 `underpowered, increase samples (try ~24)`.
@@ -278,7 +288,7 @@ jobs:
       pull-requests: write   # required to post the comment
     steps:
       - uses: actions/checkout@v4
-      - uses: Falcon305/signaltest@v0.4.0
+      - uses: Falcon305/signaltest@v0.5.0
         with:
           install: pip install -e ".[dev]"
           paths: tests/regression
@@ -337,7 +347,12 @@ signaltest show baselines/agent.json math::exact_match
 signaltest rm baselines/agent.json math::exact_match   # drop one baseline entry
 signaltest report results.json              # markdown table (--format text|html|junit)
 signaltest power baselines/agent.json math::exact_match --min-effect 0.1
+signaltest trends history.jsonl             # pass/fail of each case over time
 ```
+
+To build that history, append each run's verdicts with
+`pytest --signaltest-history history.jsonl`; `signaltest trends` then shows a
+per-case sparkline of recent results.
 
 ## Development
 

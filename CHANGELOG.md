@@ -5,7 +5,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## Unreleased
 
-## 0.4.0 - 2026-06-30
+## 0.5.0 - 2026-06-30
+
+### Added
+- Project-wide defaults in `pyproject.toml` under `[tool.signaltest]` (n, alpha,
+  min_effect, min_valid, workers, test); an explicit argument still wins.
+- Run history: `pytest --signaltest-history history.jsonl` appends each run's
+  verdicts, and `signaltest trends` shows a per-case sparkline over time.
+
+### Changed
+- The GitHub Action installs `pytest`, so it runs even when the project's install
+  command does not include a test runner.
 
 ### Added
 - Every measured case carries a bootstrap 95% confidence interval for the
