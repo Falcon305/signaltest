@@ -111,6 +111,7 @@ def _measure(
             test=test,
             comparisons=comparisons,
             spending=spending,
+            workers=workers,
         )
 
     candidate = [s for s in collect_scores(case, n, cache, workers) if s is not None]

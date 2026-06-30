@@ -262,7 +262,8 @@ none early, most at the final look — so an early stop demands strong evidence
 while the final decision keeps nearly full power (`spending="pocock"` spreads it
 evenly). A `pass` is reached early only once the effect's confidence interval
 sits within the no-meaningful-regression threshold. Each
-verdict reports how many runs it actually took. In a `run_suite`, alpha is also
+verdict reports how many runs it actually took, and `workers=N` samples each
+look's batch concurrently for slow agents. In a `run_suite`, alpha is also
 spent across the cases, so a sequential suite keeps its suite-wide false-positive
 rate bounded — the multiplicity protection that Benjamini-Hochberg gives the
 fixed-sample path.

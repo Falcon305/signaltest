@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from math import sqrt
 from typing import Any, Callable, Optional
 
@@ -59,21 +60,24 @@ def sequential_gate(
     test: str = PERMUTATION,
     comparisons: int = 1,
     spending: str = OBRIEN_FLEMING,
+    workers: int = 1,
 ) -> Verdict:
     """Draw candidate samples in batches, stopping as soon as the gate is conclusive.
 
     Alpha is spent across the looks (so peeking does not inflate false positives)
     and across `comparisons` cases (so a suite of sequential gates keeps suite-wide
     false positives bounded). A PASS can still be reached early once the effect CI
-    sits within the no-meaningful-regression threshold.
+    sits within the no-meaningful-regression threshold. Each look's batch is drawn
+    with `workers` threads; the draw order is preserved, so the verdict is the same
+    as running single-threaded.
     """
     schedule = alpha_schedule(alpha, len(sizes), spending)
     drawn: list[Optional[Any]] = []
     stats: Optional[dict[str, Any]] = None
     alpha_k = schedule[-1] / comparisons
     for i, target in enumerate(sizes):
-        while len(drawn) < target:
-            drawn.append(sampler())
+        if len(drawn) < target:
+            drawn.extend(_draw(sampler, target - len(drawn), workers))
         candidate = [s for s in drawn if s is not None]
         if len(candidate) < 2:
             continue
@@ -98,6 +102,13 @@ def sequential_gate(
         verdict = _final(stats, alpha_k)
     verdict.samples = len(drawn)
     return verdict
+
+
+def _draw(sampler: Callable[[], Optional[Any]], count: int, workers: int) -> list[Optional[Any]]:
+    if workers > 1:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            return list(pool.map(lambda _: sampler(), range(count)))
+    return [sampler() for _ in range(count)]
 
 
 def _fail(stats: dict[str, Any], alpha: float) -> Optional[Verdict]:

@@ -52,6 +52,14 @@ def test_sequential_inconclusive_when_baseline_too_small(tmp_path):
     assert verdict.status == INCONCLUSIVE
 
 
+def test_sequential_uses_workers(tmp_path):
+    path = tmp_path / "b.json"
+    seed(path, [1.0] * 10)
+    case = Case("c1", run=lambda: 1.0, expected=None, metric=ScoreMetric())
+    verdict = check_case(case, BaselineStore(path), n=4, sequential=True, workers=3)
+    assert verdict.status == PASS
+
+
 def test_suite_sequential_corrects_across_cases(tmp_path):
     from signaltest.runner import run_suite
 
