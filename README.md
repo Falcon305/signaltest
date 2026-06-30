@@ -56,6 +56,12 @@ real 15% regression        FAIL             FAIL
 A "did the mean drop?" threshold fails CI on noise and on meaningless drift.
 signaltest stays green until a regression is real *and* large enough to matter.
 
+This holds up under a Monte Carlo ([benchmark/](benchmark/)): on pure noise a
+"did the mean drop?" gate fails ~50% of runs, and a fixed 2% margin degrades from
+1% to 25% false alarms as the metric gets noisier — while signaltest holds its
+false-alarm rate near the 5% it was asked for, at every noise level, without
+retuning.
+
 ## Install
 
 ```sh
