@@ -12,7 +12,7 @@ actually changed in the agent's run.
 
 Local-first. No account, no service, no data leaves your repo.
 
-Status: early, v0.1 in progress.
+Status: v0.1.0.
 
 ## Contents
 
