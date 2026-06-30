@@ -142,3 +142,26 @@ def test_rm_missing_case_returns_1(tmp_path, capsys):
     path = tmp_path / "b.json"
     BaselineStore(path).save({})
     assert main(["rm", str(path), "nope"]) == 1
+
+
+def test_init_creates_valid_starter(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    code = main(["init"])
+    assert code == 0
+    starter = tmp_path / "tests" / "test_regression.py"
+    assert starter.exists()
+    compile(starter.read_text(), str(starter), "exec")  # generated test is valid Python
+
+
+def test_init_writes_workflow(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    code = main(["init", "--workflow"])
+    assert code == 0
+    assert (tmp_path / ".github" / "workflows" / "signaltest.yml").exists()
+
+
+def test_init_refuses_to_overwrite(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    code = main(["init"])
+    assert code == 1

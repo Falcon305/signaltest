@@ -1,12 +1,14 @@
 import argparse
 import json
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Optional
 
 from signaltest import __version__
 from signaltest.baseline.store import BaselineStore
 from signaltest.metrics.base import BOOLEAN, NUMERIC
 from signaltest.report import format_report, read_json, to_html, to_junit, to_markdown
+from signaltest.scaffold import STARTER_TEST, STARTER_WORKFLOW
 from signaltest.stats.power import advise
 
 
@@ -32,6 +34,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     power_cmd.add_argument("--alpha", type=float, default=0.05)
     power_cmd.add_argument("--power", type=float, default=0.8)
     power_cmd.add_argument("--kind", choices=[NUMERIC, BOOLEAN], default=None)
+    init_cmd = sub.add_parser("init")
+    init_cmd.add_argument("--dir", default="tests")
+    init_cmd.add_argument("--workflow", action="store_true")
     args = parser.parse_args(argv)
 
     if args.command == "version":
@@ -79,7 +84,27 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(f"{n} samples per run to detect an effect of {args.min_effect} at power {args.power}")
         return 0
 
+    if args.command == "init":
+        return _init(args.dir, args.workflow)
+
     parser.print_help()
+    return 0
+
+
+def _init(directory: str, workflow: bool) -> int:
+    test_path = Path(directory) / "test_regression.py"
+    if test_path.exists():
+        print(f"{test_path} already exists")
+        return 1
+    test_path.parent.mkdir(parents=True, exist_ok=True)
+    test_path.write_text(STARTER_TEST)
+    print(f"created {test_path}")
+    if workflow:
+        workflow_path = Path(".github/workflows/signaltest.yml")
+        workflow_path.parent.mkdir(parents=True, exist_ok=True)
+        workflow_path.write_text(STARTER_WORKFLOW)
+        print(f"created {workflow_path}")
+    print("next: point the case at your agent, then run pytest")
     return 0
 
 
