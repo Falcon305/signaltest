@@ -19,4 +19,5 @@ jobs:
       - run: uv sync --extra dev
       - run: uv run ruff check src tests examples
       - run: uv run mypy
+        if: matrix.python-version == '3.12'
       - run: uv run pytest -q
