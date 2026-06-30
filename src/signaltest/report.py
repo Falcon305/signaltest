@@ -1,11 +1,13 @@
 import json
 from dataclasses import asdict
+from html import escape
 from pathlib import Path
 from typing import Union
 
 from signaltest.stats.gate import FAIL, INCONCLUSIVE, PASS, Verdict
 
 ICON = {PASS: "✅", FAIL: "❌", INCONCLUSIVE: "⚠️"}
+COLOR = {PASS: "#1a7f37", FAIL: "#cf222e", INCONCLUSIVE: "#9a6700"}
 
 
 def describe(verdict: Verdict) -> str:
@@ -57,6 +59,31 @@ def to_markdown(results: dict[str, Verdict]) -> str:
     lines.append("")
     lines.append(f"**{_summary(results)}**")
     return "\n".join(lines)
+
+
+def to_html(results: dict[str, Verdict]) -> str:
+    rows = []
+    for case_id, verdict in results.items():
+        color = COLOR.get(verdict.status, "#000")
+        rows.append(
+            f"<tr><td>{escape(case_id)}</td>"
+            f'<td style="color:{color};font-weight:600">{verdict.status}</td>'
+            f"<td>{escape(describe(verdict))}</td></tr>"
+        )
+    body = "\n".join(rows)
+    return (
+        "<!doctype html>\n"
+        '<html lang="en"><head><meta charset="utf-8"><title>signaltest</title>\n'
+        "<style>body{font-family:system-ui,sans-serif;margin:2rem}"
+        "table{border-collapse:collapse;width:100%}"
+        "th,td{border:1px solid #d0d7de;padding:.4rem .6rem;text-align:left}"
+        "th{background:#f6f8fa}</style></head>\n"
+        "<body><h2>signaltest</h2>\n"
+        "<table><thead><tr><th>Case</th><th>Status</th><th>Detail</th></tr></thead>\n"
+        f"<tbody>\n{body}\n</tbody></table>\n"
+        f"<p><strong>{_summary(results)}</strong></p>\n"
+        "</body></html>\n"
+    )
 
 
 def write_json(results: dict[str, Verdict], path: Union[str, Path]) -> None:

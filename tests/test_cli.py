@@ -69,6 +69,18 @@ def test_report_text_format(tmp_path, capsys):
     assert code == 0
 
 
+def test_report_html_format(tmp_path, capsys):
+    from signaltest.report import write_json
+    from signaltest.stats.gate import PASS, Verdict
+
+    path = tmp_path / "results.json"
+    write_json({"geo": Verdict(PASS, None, None, "no significant regression")}, path)
+    code = main(["report", str(path), "--format", "html"])
+    out = capsys.readouterr().out
+    assert "<!doctype html>" in out
+    assert code == 0
+
+
 def test_power_recommends_samples(tmp_path, capsys):
     path = tmp_path / "b.json"
     k = key("c1", "numeric")

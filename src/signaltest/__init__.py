@@ -11,6 +11,7 @@ from signaltest.report import (
     exit_code,
     format_report,
     read_json,
+    to_html,
     to_markdown,
     write_json,
 )
@@ -29,6 +30,7 @@ __all__ = [
     "compare_scores",
     "format_report",
     "to_markdown",
+    "to_html",
     "write_json",
     "read_json",
     "describe",
