@@ -14,6 +14,7 @@ from signaltest.report import describe
 from signaltest.results import collector
 from signaltest.stats.correction import bh_adjust
 from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate
+from signaltest.stats.significance import PERMUTATION
 
 
 @dataclass
@@ -62,6 +63,7 @@ def _measure(
     cache: Optional[ScoreCache] = None,
     update: bool = False,
     workers: int = 1,
+    test: str = PERMUTATION,
 ) -> Union[Verdict, dict[str, Any]]:
     candidate = [s for s in collect_scores(case, n, cache, workers) if s is not None]
     k = key(case.case_id, case.metric.name)
@@ -90,6 +92,7 @@ def _measure(
         polarity=case.metric.polarity,
         min_effect=min_effect,
         alpha=alpha,
+        test=test,
     )
 
 
@@ -120,10 +123,21 @@ def check_case(
     cache: Optional[Union[str, Path]] = None,
     update: bool = False,
     workers: int = 1,
+    test: str = PERMUTATION,
 ) -> Verdict:
     score_cache = ScoreCache(cache) if cache is not None else None
     measured = _measure(
-        case, store, n, alpha, min_valid, min_effect, model, score_cache, _update(update), workers
+        case,
+        store,
+        n,
+        alpha,
+        min_valid,
+        min_effect,
+        model,
+        score_cache,
+        _update(update),
+        workers,
+        test,
     )
     verdict = measured if isinstance(measured, Verdict) else _decide(measured, alpha, min_valid)
     collector.record(case.case_id, verdict)
@@ -152,6 +166,7 @@ def run_suite(
     cache: Optional[Union[str, Path]] = None,
     update: bool = False,
     workers: int = 1,
+    test: str = PERMUTATION,
 ) -> dict[str, Verdict]:
     store = BaselineStore(baseline_path)
     score_cache = ScoreCache(cache) if cache is not None else None
@@ -160,7 +175,17 @@ def run_suite(
     pending = []
     for case in cases:
         measured = _measure(
-            case, store, n, alpha, min_valid, min_effect, model, score_cache, do_update, workers
+            case,
+            store,
+            n,
+            alpha,
+            min_valid,
+            min_effect,
+            model,
+            score_cache,
+            do_update,
+            workers,
+            test,
         )
         if isinstance(measured, Verdict):
             results[case.case_id] = measured

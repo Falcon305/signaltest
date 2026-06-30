@@ -7,7 +7,11 @@ from signaltest.metrics.base import HIGHER_BETTER, NUMERIC
 from signaltest.stats.effect import effect_ci
 from signaltest.stats.gate import Verdict, decide_gate, is_underpowered
 from signaltest.stats.power import advise
-from signaltest.stats.significance import boolean_significance, numeric_significance
+from signaltest.stats.significance import (
+    PERMUTATION,
+    boolean_significance,
+    numeric_significance,
+)
 
 DEFAULT_MIN_EFFECT = {"numeric": 0.03, "boolean": 0.10}
 
@@ -20,10 +24,11 @@ def measure_scores(
     polarity: str,
     min_effect: Optional[float] = None,
     alpha: float = 0.05,
+    test: str = PERMUTATION,
 ) -> dict[str, Any]:
     resolved = DEFAULT_MIN_EFFECT[kind] if min_effect is None else min_effect
     if kind == NUMERIC:
-        pvalue = numeric_significance(baseline, candidate)
+        pvalue = numeric_significance(baseline, candidate, test=test)
     else:
         pvalue = boolean_significance(baseline, candidate)
     ci_low, ci_high = effect_ci(baseline, candidate)
@@ -48,13 +53,20 @@ def compare_scores(
     alpha: float = 0.05,
     min_effect: Optional[float] = None,
     min_valid: int = 2,
+    test: str = PERMUTATION,
 ) -> Verdict:
     """Gate two raw score arrays, e.g. from Inspect AI epochs or DeepEval trials."""
     n_valid = min(len(baseline), len(candidate))
     if n_valid < min_valid:
         return decide_gate(1.0, 0.0, n_valid=n_valid, min_valid=min_valid)
     stats = measure_scores(
-        baseline, candidate, kind=kind, polarity=polarity, min_effect=min_effect, alpha=alpha
+        baseline,
+        candidate,
+        kind=kind,
+        polarity=polarity,
+        min_effect=min_effect,
+        alpha=alpha,
+        test=test,
     )
     return decide_gate(
         stats["pvalue"],

@@ -2,14 +2,23 @@ from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
-from scipy.stats import fisher_exact, permutation_test
+from scipy.stats import fisher_exact, mannwhitneyu, permutation_test
+
+PERMUTATION = "permutation"
+MANNWHITNEY = "mannwhitney"
 
 
 def numeric_significance(
-    baseline: Sequence[float], candidate: Sequence[float], rng: int = 0
+    baseline: Sequence[float],
+    candidate: Sequence[float],
+    rng: int = 0,
+    test: str = PERMUTATION,
 ) -> float:
     if len(baseline) < 2 or len(candidate) < 2:
         raise ValueError("each group needs at least 2 samples")
+
+    if test == MANNWHITNEY:
+        return float(mannwhitneyu(candidate, baseline, alternative="two-sided").pvalue)
 
     def stat(a: Any, b: Any, axis: int = 0) -> Any:
         return np.mean(a, axis=axis) - np.mean(b, axis=axis)
