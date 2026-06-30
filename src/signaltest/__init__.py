@@ -1,3 +1,4 @@
+from signaltest.compare import compare_scores
 from signaltest.metrics.base import Metric
 from signaltest.metrics.contains import Contains
 from signaltest.metrics.exact import ExactMatch
@@ -24,6 +25,7 @@ __all__ = [
     "assert_no_regression",
     "check_case",
     "run_suite",
+    "compare_scores",
     "format_report",
     "to_markdown",
     "write_json",

@@ -3,19 +3,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
-import numpy as np
-
 from signaltest.baseline.record import key, make_record, update_baseline
 from signaltest.baseline.store import BaselineStore
-from signaltest.metrics.base import NUMERIC, Metric, Score
+from signaltest.compare import measure_scores
+from signaltest.metrics.base import Metric, Score
 from signaltest.report import describe
 from signaltest.results import collector
 from signaltest.stats.correction import bh_adjust
-from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate, is_underpowered
-from signaltest.stats.power import advise
-from signaltest.stats.significance import boolean_significance, numeric_significance
-
-DEFAULT_MIN_EFFECT = {"numeric": 0.03, "boolean": 0.10}
+from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate
 
 
 @dataclass
@@ -62,21 +57,14 @@ def _measure(
     if n_valid < min_valid:
         return decide_gate(1.0, 0.0, n_valid=n_valid, min_valid=min_valid)
 
-    if case.metric.kind == NUMERIC:
-        pvalue = numeric_significance(baseline, candidate)
-    else:
-        pvalue = boolean_significance(baseline, candidate)
-
-    resolved_effect = DEFAULT_MIN_EFFECT[case.metric.kind] if min_effect is None else min_effect
-    return {
-        "pvalue": pvalue,
-        "effect": float(np.mean(candidate) - np.mean(baseline)),
-        "polarity": case.metric.polarity,
-        "min_effect": resolved_effect,
-        "n_valid": n_valid,
-        "underpowered": is_underpowered(len(baseline), len(candidate), alpha),
-        "recommended": advise(baseline, case.metric.kind, resolved_effect, alpha),
-    }
+    return measure_scores(
+        baseline,
+        candidate,
+        kind=case.metric.kind,
+        polarity=case.metric.polarity,
+        min_effect=min_effect,
+        alpha=alpha,
+    )
 
 
 def _decide(stats: dict[str, Any], alpha: float, min_valid: int) -> Verdict:
