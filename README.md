@@ -12,7 +12,7 @@ actually changed in the agent's run.
 
 Local-first. No account, no service, no data leaves your repo.
 
-Status: v0.1.0.
+Status: v0.2.0.
 
 ## Contents
 
@@ -42,6 +42,19 @@ signaltest treats the score as a distribution, not a number. It samples the agen
 `n` times for the candidate, compares against `n` recorded baseline samples, and
 only fails when the difference is **statistically significant** *and* clears a
 **minimum effect size**. Noise stays green. Real regressions go red.
+
+The difference, on three scenarios (run it yourself with `python examples/flaky.py`):
+
+```
+scenario                   naive threshold  signaltest
+--------------------------------------------------------
+pure noise (same model)    FAIL             PASS
+trivial 0.5% drift         FAIL             PASS
+real 15% regression        FAIL             FAIL
+```
+
+A "did the mean drop?" threshold fails CI on noise and on meaningless drift.
+signaltest stays green until a regression is real *and* large enough to matter.
 
 ## Install
 
@@ -119,6 +132,12 @@ test) and its `polarity` (is higher or lower better).
 | `Contains()` | boolean | higher better | `expected in output` |
 | `Numeric(name, polarity)` | numeric | configurable | the raw value (latency, cost, judge score) |
 | `TrajectoryMatch(ignore_keys=...)` | numeric | higher better | fraction of matching agent tool-calls |
+| `LLMJudge(judge)` | numeric | higher better | your `judge(output, expected) -> float` |
+| `Faithfulness(judge)` | numeric | higher better | grounding of an answer in its context |
+| `AnswerRelevancy(judge)` | numeric | higher better | relevance of an answer to the question |
+
+The judge metrics wrap a scoring callable you supply, so no LLM provider is baked
+in — point them at any model (or a deterministic stub in tests).
 
 `Numeric` with `polarity="lower_better"` is how you gate latency or cost — a real
 *increase* becomes the regression.
@@ -174,6 +193,23 @@ Every `assert_no_regression` / `check_case` / `run_suite` call accepts:
 | `min_effect` | `0.03` numeric / `0.10` boolean | minimum effect size to count |
 | `min_valid` | `2` | fewer valid samples than this → `inconclusive` |
 | `model` | `None` | model id recorded with the baseline |
+| `cache` | `None` | path to reuse sampled scores (see below) |
+
+When a case comes back `inconclusive`, the reason tells you roughly how many
+samples it would take to detect the effect you set — e.g.
+`underpowered, increase samples (try ~24)`.
+
+### Caching expensive runs
+
+Sampling `n` times is the cost of the method. If your agent is expensive, give a
+case a `cache_key` (bump it whenever the prompt or model changes) and pass a
+`cache` path. Identical keys reuse the stored scores instead of calling the agent
+again:
+
+```python
+case = Case("math", run=my_agent, expected="4", metric=ExactMatch(), cache_key="v1")
+assert_no_regression(case, "baselines/math.json", cache=".signaltest-cache.json")
+```
 
 ## Baselines
 
@@ -181,8 +217,10 @@ A baseline is a JSON file committed to your repo. Each entry is keyed by
 `case_id::metric_name` and stores the recorded scores and the model.
 
 - **Cold start** — the first run records the baseline and passes.
-- **Updating** — to accept a new baseline on purpose, delete the case's entry and
-  re-run, or edit the JSON. The change is a reviewable diff in the same PR.
+- **Updating** — accept new baselines the way you would update snapshots: run
+  `pytest --signaltest-update` (or pass `update=True`) to re-record every case, or
+  drop one entry with `signaltest rm <path> <case>`. The change is a reviewable
+  diff in the same PR.
 - **Inspecting** — use the CLI (below).
 
 ## Using it in CI
@@ -215,7 +253,7 @@ jobs:
       pull-requests: write   # required to post the comment
     steps:
       - uses: actions/checkout@v4
-      - uses: Falcon305/signaltest@v0.1.0
+      - uses: Falcon305/signaltest@v0.2.0
         with:
           install: pip install -e ".[dev]"
           paths: tests/regression
@@ -230,7 +268,26 @@ jobs:
 
 The table is produced from a results file your tests write with
 `pytest --signaltest-json results.json`; `signaltest report results.json`
-renders it, so you can reproduce the exact comment locally.
+renders it (`--format text` or `--format html` too), so you can reproduce the
+exact comment locally.
+
+## Gating scores from other tools
+
+Already running evals in Inspect AI, DeepEval, Ragas, or your own harness?
+signaltest is happy to be just the decision layer. If you can produce two arrays
+of per-sample scores — a baseline and a candidate — `compare_scores` applies the
+same significance + effect-size gate without the `Case` machinery:
+
+```python
+from signaltest import compare_scores
+
+verdict = compare_scores(baseline_scores, candidate_scores, kind="numeric")
+print(verdict.status, verdict.reason)
+```
+
+This is the natural companion to tools that already repeat each case (Inspect's
+epochs, DeepEval's runs, Braintrust's trials) but only average the results —
+hand signaltest the raw samples and get a real verdict.
 
 ## CLI
 
@@ -238,7 +295,9 @@ renders it, so you can reproduce the exact comment locally.
 signaltest version
 signaltest baselines baselines/agent.json   # list recorded cases
 signaltest show baselines/agent.json math::exact_match
-signaltest report results.json              # render a markdown table (--format text for plain)
+signaltest rm baselines/agent.json math::exact_match   # drop one baseline entry
+signaltest report results.json              # markdown table (--format text|html)
+signaltest power baselines/agent.json math::exact_match --min-effect 0.1
 ```
 
 ## Development
@@ -264,6 +323,7 @@ Try the offline examples (cached responses, no API key):
 ```sh
 python examples/demo.py        # smallest possible case
 python examples/tool_agent.py  # tool-using agent: trajectory + answer checks
+python examples/flaky.py       # threshold vs. statistical gate, side by side
 ```
 
 See [docs/architecture.md](docs/architecture.md) for how the pieces fit together

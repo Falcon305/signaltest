@@ -5,12 +5,24 @@ All notable changes to this project are documented here. The format is based on
 
 ## Unreleased
 
+## 0.2.0 - 2026-06-30
+
 ### Added
 - GitHub Action that runs your cases and posts a sticky results comment on the
   pull request, updated in place on every push.
 - `pytest --signaltest-json PATH` writes the run's verdicts to JSON.
-- `signaltest report` renders that JSON as a markdown table or plain text.
-- `to_markdown`, `write_json`, and `read_json` helpers in the public API.
+- `signaltest report` renders that JSON as markdown, plain text, or HTML.
+- `compare_scores` gates two raw score arrays, so signaltest can sit on top of
+  Inspect AI epochs, DeepEval runs, or any harness that already samples.
+- Power advisor: `signaltest power`, and inconclusive verdicts now suggest how
+  many samples would detect the effect you set.
+- Result caching: a `cache` path plus a `cache_key` per case reuses sampled
+  scores instead of re-running an expensive agent.
+- Snapshot-style baseline updates: `pytest --signaltest-update`, an `update=`
+  flag, and `signaltest rm` to drop a single entry.
+- `Faithfulness` and `AnswerRelevancy` judge metrics (provider-agnostic).
+- `to_markdown`, `to_html`, `write_json`, and `read_json` helpers in the public
+  API.
 
 ## 0.1.0 - 2026-06-30
 
