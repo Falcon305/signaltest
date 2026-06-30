@@ -4,6 +4,7 @@ from signaltest.metrics.contains import Contains
 from signaltest.metrics.exact import ExactMatch
 from signaltest.metrics.judge import LLMJudge
 from signaltest.metrics.numeric import Numeric
+from signaltest.metrics.rag import AnswerRelevancy, Faithfulness
 from signaltest.metrics.trajectory import TrajectoryMatch
 from signaltest.report import (
     describe,
@@ -39,6 +40,8 @@ __all__ = [
     "Numeric",
     "TrajectoryMatch",
     "LLMJudge",
+    "Faithfulness",
+    "AnswerRelevancy",
     "Step",
     "PASS",
     "FAIL",
