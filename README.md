@@ -58,6 +58,30 @@ stored baseline samples ┘                      ├─> block only if
 - Underpowered cases (too few samples to detect a real change) are flagged, never
   passed silently.
 
+## Try the demo
+
+Runs fully offline with cached responses, no API key:
+
+```sh
+python examples/demo.py
+```
+
+## Development
+
+```sh
+git clone https://github.com/Falcon305/signaltest
+cd signaltest
+python -m venv .venv && . .venv/bin/activate
+pip install -e ".[dev]"
+pytest
+ruff check src tests examples
+```
+
+## Contributing
+
+Issues and pull requests are welcome. Keep changes small and focused, and add a
+test for anything you change.
+
 ## License
 
 MIT
