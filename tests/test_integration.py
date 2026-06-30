@@ -42,5 +42,10 @@ def test_trajectory_regression_is_caught(tmp_path):
     expected = [Step("search"), Step("answer")]
     good = Case("t", run=lambda: list(expected), expected=expected, metric=TrajectoryMatch())
     check_case(good, store)
-    bad = Case("t", run=lambda: [Step("search"), Step("delete")], expected=expected, metric=TrajectoryMatch())
+    bad = Case(
+        "t",
+        run=lambda: [Step("search"), Step("delete")],
+        expected=expected,
+        metric=TrajectoryMatch(),
+    )
     assert check_case(bad, store).status == FAIL

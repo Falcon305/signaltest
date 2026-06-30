@@ -22,7 +22,9 @@ def format_report(results: dict[str, Verdict]) -> str:
     for case_id, verdict in results.items():
         counts[verdict.status] += 1
         lines.append(f"{verdict.status.upper():13} {case_id}: {describe(verdict)}")
-    lines.append(f"{counts[PASS]} passed, {counts[FAIL]} failed, {counts[INCONCLUSIVE]} inconclusive")
+    lines.append(
+        f"{counts[PASS]} passed, {counts[FAIL]} failed, {counts[INCONCLUSIVE]} inconclusive"
+    )
     return "\n".join(lines)
 
 

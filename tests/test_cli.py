@@ -12,7 +12,9 @@ def test_version_command(capsys):
 
 def test_baselines_lists_cases(tmp_path, capsys):
     path = tmp_path / "b.json"
-    update_baseline(BaselineStore(path), key("c1", "exact_match"), make_record([1, 1, 0], model="m1"))
+    update_baseline(
+        BaselineStore(path), key("c1", "exact_match"), make_record([1, 1, 0], model="m1")
+    )
     code = main(["baselines", str(path)])
     out = capsys.readouterr().out
     assert "c1::exact_match" in out

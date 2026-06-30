@@ -50,7 +50,9 @@ def _measure(
     is_cold = k not in data
     if is_cold or data[k].get("model") != model:
         update_baseline(store, k, make_record(candidate, model=model))
-        reason = "recorded baseline (cold start)" if is_cold else "re-recorded baseline (model changed)"
+        reason = (
+            "recorded baseline (cold start)" if is_cold else "re-recorded baseline (model changed)"
+        )
         return Verdict(PASS, None, None, reason)
 
     baseline = data[k]["scores"]

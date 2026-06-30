@@ -7,16 +7,19 @@ Thanks for your interest in signaltest.
 ```sh
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
+pre-commit install   # optional: run the linters on every commit
 ```
 
 ## Before opening a PR
 
 - Add a test for anything you change.
-- Run the suite and the linter:
+- Run the checks (the same ones CI runs):
 
 ```sh
-pytest
 ruff check src tests examples
+ruff format --check src tests examples
+mypy
+coverage run -m pytest && coverage report
 ```
 
 - Keep changes small and focused — one idea per PR.
