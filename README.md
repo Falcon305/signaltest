@@ -12,7 +12,7 @@ actually changed in the agent's run.
 
 Local-first. No account, no service, no data leaves your repo.
 
-Status: v0.3.0.
+Status: v0.4.0.
 
 ## Contents
 
@@ -169,11 +169,20 @@ stored baseline samples ┘                      ├─> block only if
                           effect size ─────────┘   past the floor
 ```
 
-- **Significance** — a permutation test for numeric metrics, Fisher's exact test
-  for boolean metrics. Both are seeded, so the same inputs always give the same
-  result. The gate that kills flakiness is not itself flaky.
+- **Significance** — a permutation test for numeric metrics (or Mann-Whitney via
+  `test="mannwhitney"`), Fisher's exact test for boolean metrics. The numeric
+  tests are seeded, so the same inputs always give the same result. The gate that
+  kills flakiness is not itself flaky.
 - **Effect floor** — a regression must also clear a minimum effect size, so a
   statistically significant but meaningless 0.1% drift never blocks the build.
+- **Confidence interval** — every measured case carries a bootstrap 95% interval
+  for the effect, reported as numbers and as a bar that shows at a glance whether
+  the interval excludes zero:
+
+  ```
+  regression   ━━━━━━━━━·│··········   (interval sits left of zero)
+  noise        ··━━━━━━━━╋━━━━━━━━━━   (interval straddles zero)
+  ```
 - **Multiple comparisons** — across a suite, p-values are adjusted with the
   Benjamini-Hochberg procedure, so flakiness doesn't reappear at the suite level.
 - **Power** — cases with too few samples to detect a real change are flagged
@@ -195,6 +204,7 @@ Every `assert_no_regression` / `check_case` / `run_suite` call accepts:
 | `model` | `None` | model id recorded with the baseline |
 | `cache` | `None` | path to reuse sampled scores (see below) |
 | `workers` | `1` | sample concurrently with this many threads |
+| `test` | `"permutation"` | numeric significance test (`"mannwhitney"` for the rank-based alternative) |
 
 When a case comes back `inconclusive`, the reason tells you roughly how many
 samples it would take to detect the effect you set — e.g.
@@ -257,7 +267,7 @@ jobs:
       pull-requests: write   # required to post the comment
     steps:
       - uses: actions/checkout@v4
-      - uses: Falcon305/signaltest@v0.3.0
+      - uses: Falcon305/signaltest@v0.4.0
         with:
           install: pip install -e ".[dev]"
           paths: tests/regression
@@ -351,6 +361,9 @@ and how to add your own metric.
 
 **Does it call my LLM?** Only through the `run` function you provide. signaltest
 never talks to a provider itself.
+
+**Can `run` be async?** Yes. If `run` is an `async def`, signaltest awaits it for
+each sample, so coroutine-based agents work with no wrapper.
 
 **How many samples do I need?** `n=10` is a sane default for numeric metrics.
 Boolean metrics resolve in coarser steps, so they need more — bump `n` and watch

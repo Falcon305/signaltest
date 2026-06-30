@@ -5,7 +5,18 @@ All notable changes to this project are documented here. The format is based on
 
 ## Unreleased
 
-## 0.3.0 - 2026-06-30
+## 0.4.0 - 2026-06-30
+
+### Added
+- Every measured case carries a bootstrap 95% confidence interval for the
+  effect, shown in reports as numbers and as a visual bar (`ci_bar`).
+- `test="mannwhitney"` selects a rank-based numeric significance test alongside
+  the default permutation test.
+- Async agents: a `run` coroutine is awaited for each sample.
+
+### Changed
+- The effect confidence interval uses the percentile bootstrap, which is robust
+  on constant score arrays (no more degenerate-data warnings).
 
 ### Added
 - Adapters to gate scores from other tools: `scores_from_inspect_log` and
