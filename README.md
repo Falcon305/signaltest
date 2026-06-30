@@ -12,7 +12,7 @@ actually changed in the agent's run.
 
 Local-first. No account, no service, no data leaves your repo.
 
-Status: v0.6.0.
+Status: v0.7.0.
 
 ## Contents
 
@@ -321,7 +321,7 @@ jobs:
       pull-requests: write   # required to post the comment
     steps:
       - uses: actions/checkout@v4
-      - uses: Falcon305/signaltest@v0.6.0
+      - uses: Falcon305/signaltest@v0.7.0
         with:
           install: pip install -e ".[dev]"
           paths: tests/regression
