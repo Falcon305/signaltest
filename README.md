@@ -253,7 +253,18 @@ and nothing leaves your infrastructure.
 
 The bundled action runs your cases and posts a sticky results table on the pull
 request — updated in place on every push, so reviewers see the effect size and
-p-value of any regression next to the diff:
+p-value of any regression next to the diff. Here is one on a real PR
+([live example](https://github.com/Falcon305/signaltest/pull/1)):
+
+| Case | Status | Detail | 95% CI |
+| --- | --- | --- | --- |
+| answer_quality | ✅ pass | no significant regression (effect=+0.000, 95% CI [-0.011, +0.011], p=1.000) | `━━━━━━━━━━╋━━━━━━━━━━` |
+| answer_quality_v2 | ❌ fail | significant regression past the effect floor (effect=-0.200, 95% CI [-0.211, -0.189], p=0.001) | `━━········│··········` |
+| exact_answer | ✅ pass | no significant regression (effect=+0.000, 95% CI [+0.000, +0.000], p=1.000) | `··········╋··········` |
+
+**2 passed, 1 failed, 0 inconclusive**
+
+Wire it up with:
 
 ```yaml
 name: regression
