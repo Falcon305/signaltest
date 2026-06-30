@@ -1,5 +1,6 @@
 from signaltest.metrics.contains import Contains
 from signaltest.metrics.exact import ExactMatch
+from signaltest.metrics.judge import LLMJudge
 from signaltest.metrics.numeric import Numeric
 from signaltest.metrics.trajectory import TrajectoryMatch
 from signaltest.report import exit_code, format_report
@@ -20,6 +21,7 @@ __all__ = [
     "Contains",
     "Numeric",
     "TrajectoryMatch",
+    "LLMJudge",
     "Step",
     "PASS",
     "FAIL",
