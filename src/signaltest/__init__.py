@@ -1,3 +1,4 @@
+from signaltest.adapters import scores_from_deepeval, scores_from_inspect_log
 from signaltest.compare import compare_scores
 from signaltest.metrics.base import Metric
 from signaltest.metrics.contains import Contains
@@ -28,6 +29,8 @@ __all__ = [
     "check_case",
     "run_suite",
     "compare_scores",
+    "scores_from_inspect_log",
+    "scores_from_deepeval",
     "format_report",
     "to_markdown",
     "to_html",
