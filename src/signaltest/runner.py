@@ -104,6 +104,8 @@ def _decide(stats: dict[str, Any], alpha: float, min_valid: int) -> Verdict:
         min_valid=min_valid,
         underpowered=stats["underpowered"],
         recommended_samples=stats["recommended"],
+        ci_low=stats["ci"][0],
+        ci_high=stats["ci"][1],
     )
 
 

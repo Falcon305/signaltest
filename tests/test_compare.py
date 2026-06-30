@@ -34,3 +34,18 @@ def test_lower_better_increase_fails():
     candidate = [180.0] * 12
     verdict = compare_scores(baseline, candidate, kind=NUMERIC, polarity=LOWER_BETTER)
     assert verdict.status == FAIL
+
+
+def test_verdict_carries_effect_ci():
+    baseline = [0.9, 0.88, 0.91, 0.89, 0.9, 0.92, 0.87, 0.9, 0.91, 0.89, 0.9, 0.9]
+    candidate = [0.6, 0.62, 0.59, 0.61, 0.6, 0.58, 0.63, 0.6, 0.59, 0.61, 0.6, 0.6]
+    verdict = compare_scores(baseline, candidate, kind=NUMERIC)
+    assert verdict.ci_low is not None
+    assert verdict.ci_high is not None
+    assert verdict.ci_low <= verdict.ci_high
+
+
+def test_inconclusive_has_no_ci():
+    verdict = compare_scores([1.0], [0.5], kind=NUMERIC)
+    assert verdict.ci_low is None
+    assert verdict.ci_high is None

@@ -9,6 +9,12 @@ def test_describe_includes_effect_and_pvalue():
     assert "p=0.003" in text
 
 
+def test_describe_includes_confidence_interval():
+    verdict = Verdict(FAIL, pvalue=0.003, effect=-0.12, reason="r", ci_low=-0.21, ci_high=-0.05)
+    text = describe(verdict)
+    assert "95% CI [-0.210, -0.050]" in text
+
+
 def test_describe_omits_missing_stats():
     verdict = Verdict(PASS, pvalue=None, effect=None, reason="recorded baseline")
     assert describe(verdict) == "recorded baseline"

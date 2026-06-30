@@ -13,6 +13,8 @@ class Verdict:
     pvalue: Optional[float]
     effect: Optional[float]
     reason: str
+    ci_low: Optional[float] = None
+    ci_high: Optional[float] = None
 
 
 def decide_gate(
@@ -26,6 +28,8 @@ def decide_gate(
     min_valid: int = 2,
     underpowered: bool = False,
     recommended_samples: Optional[int] = None,
+    ci_low: Optional[float] = None,
+    ci_high: Optional[float] = None,
 ) -> Verdict:
     if n_valid < min_valid:
         return Verdict(INCONCLUSIVE, pvalue, effect, f"only {n_valid} valid runs, need {min_valid}")
@@ -35,11 +39,13 @@ def decide_gate(
     big_enough = abs(effect) >= min_effect
 
     if regressed and significant and big_enough:
-        return Verdict(FAIL, pvalue, effect, "significant regression past the effect floor")
+        reason = "significant regression past the effect floor"
+        return Verdict(FAIL, pvalue, effect, reason, ci_low, ci_high)
     if underpowered:
         hint = f" (try ~{recommended_samples})" if recommended_samples else ""
-        return Verdict(INCONCLUSIVE, pvalue, effect, f"underpowered, increase samples{hint}")
-    return Verdict(PASS, pvalue, effect, "no significant regression")
+        reason = f"underpowered, increase samples{hint}"
+        return Verdict(INCONCLUSIVE, pvalue, effect, reason, ci_low, ci_high)
+    return Verdict(PASS, pvalue, effect, "no significant regression", ci_low, ci_high)
 
 
 def is_underpowered(n_baseline: int, n_candidate: int, alpha: float = 0.05) -> bool:

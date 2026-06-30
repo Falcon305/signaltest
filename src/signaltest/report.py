@@ -21,6 +21,8 @@ def _stats(verdict: Verdict) -> str:
     parts = []
     if verdict.effect is not None:
         parts.append(f"effect={verdict.effect:+.3f}")
+    if verdict.ci_low is not None and verdict.ci_high is not None:
+        parts.append(f"95% CI [{verdict.ci_low:+.3f}, {verdict.ci_high:+.3f}]")
     if verdict.pvalue is not None:
         parts.append(f"p={verdict.pvalue:.3f}")
     return ", ".join(parts)

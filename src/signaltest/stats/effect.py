@@ -17,10 +17,17 @@ def effect_ci(
     def diff(b: Any, c: Any, axis: int = 0) -> Any:
         return np.mean(c, axis=axis) - np.mean(b, axis=axis)
 
+    base = np.asarray(baseline, dtype=float)
+    cand = np.asarray(candidate, dtype=float)
+    observed = float(cand.mean() - base.mean())
+    if np.ptp(base) == 0 and np.ptp(cand) == 0:
+        return (observed, observed)
+
     result = bootstrap(
-        (baseline, candidate),
+        (base, cand),
         diff,
         confidence_level=confidence,
+        method="percentile",
         vectorized=True,
         rng=rng,
     )

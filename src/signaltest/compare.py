@@ -4,6 +4,7 @@ from typing import Any, Optional
 import numpy as np
 
 from signaltest.metrics.base import HIGHER_BETTER, NUMERIC
+from signaltest.stats.effect import effect_ci
 from signaltest.stats.gate import Verdict, decide_gate, is_underpowered
 from signaltest.stats.power import advise
 from signaltest.stats.significance import boolean_significance, numeric_significance
@@ -25,6 +26,7 @@ def measure_scores(
         pvalue = numeric_significance(baseline, candidate)
     else:
         pvalue = boolean_significance(baseline, candidate)
+    ci_low, ci_high = effect_ci(baseline, candidate)
     return {
         "pvalue": pvalue,
         "effect": float(np.mean(candidate) - np.mean(baseline)),
@@ -33,6 +35,7 @@ def measure_scores(
         "n_valid": min(len(baseline), len(candidate)),
         "underpowered": is_underpowered(len(baseline), len(candidate), alpha),
         "recommended": advise(baseline, kind, resolved, alpha),
+        "ci": (ci_low, ci_high),
     }
 
 
@@ -63,4 +66,6 @@ def compare_scores(
         min_valid=min_valid,
         underpowered=stats["underpowered"],
         recommended_samples=stats["recommended"],
+        ci_low=stats["ci"][0],
+        ci_high=stats["ci"][1],
     )
