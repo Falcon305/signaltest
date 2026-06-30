@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
+from signaltest import config as cfg
 from signaltest.baseline.cache import ScoreCache
 from signaltest.baseline.record import key, make_record, update_baseline
 from signaltest.baseline.store import BaselineStore
@@ -17,6 +18,8 @@ from signaltest.results import collector
 from signaltest.stats.correction import bh_adjust
 from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate
 from signaltest.stats.significance import PERMUTATION
+
+_UNSET: Any = object()
 
 
 @dataclass
@@ -120,16 +123,22 @@ def _decide(stats: dict[str, Any], alpha: float, min_valid: int) -> Verdict:
 def check_case(
     case: Case,
     store: BaselineStore,
-    n: int = 10,
-    alpha: float = 0.05,
-    min_effect: Optional[float] = None,
-    min_valid: int = 2,
+    n: Optional[int] = None,
+    alpha: Optional[float] = None,
+    min_effect: Any = _UNSET,
+    min_valid: Optional[int] = None,
     model: Optional[str] = None,
     cache: Optional[Union[str, Path]] = None,
     update: bool = False,
-    workers: int = 1,
-    test: str = PERMUTATION,
+    workers: Optional[int] = None,
+    test: Optional[str] = None,
 ) -> Verdict:
+    n = cfg.get("n") if n is None else n
+    alpha = cfg.get("alpha") if alpha is None else alpha
+    min_effect = cfg.get("min_effect") if min_effect is _UNSET else min_effect
+    min_valid = cfg.get("min_valid") if min_valid is None else min_valid
+    workers = cfg.get("workers") if workers is None else workers
+    test = cfg.get("test") if test is None else test
     score_cache = ScoreCache(cache) if cache is not None else None
     measured = _measure(
         case,
@@ -163,16 +172,22 @@ def assert_no_regression(case: Case, baseline_path: Union[str, Path], **kwargs: 
 def run_suite(
     cases: Sequence[Case],
     baseline_path: Union[str, Path],
-    n: int = 10,
-    alpha: float = 0.05,
-    min_effect: Optional[float] = None,
-    min_valid: int = 2,
+    n: Optional[int] = None,
+    alpha: Optional[float] = None,
+    min_effect: Any = _UNSET,
+    min_valid: Optional[int] = None,
     model: Optional[str] = None,
     cache: Optional[Union[str, Path]] = None,
     update: bool = False,
-    workers: int = 1,
-    test: str = PERMUTATION,
+    workers: Optional[int] = None,
+    test: Optional[str] = None,
 ) -> dict[str, Verdict]:
+    n = cfg.get("n") if n is None else n
+    alpha = cfg.get("alpha") if alpha is None else alpha
+    min_effect = cfg.get("min_effect") if min_effect is _UNSET else min_effect
+    min_valid = cfg.get("min_valid") if min_valid is None else min_valid
+    workers = cfg.get("workers") if workers is None else workers
+    test = cfg.get("test") if test is None else test
     store = BaselineStore(baseline_path)
     score_cache = ScoreCache(cache) if cache is not None else None
     do_update = _update(update)

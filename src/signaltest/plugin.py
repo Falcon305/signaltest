@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from typing import Any
 
+from signaltest.config import configure, load_pyproject
 from signaltest.history import append_history
 from signaltest.report import write_json
 from signaltest.results import collector
@@ -28,6 +29,7 @@ def pytest_addoption(parser: Any) -> None:
 
 def pytest_configure(config: Any) -> None:
     config.addinivalue_line("markers", "signaltest: mark a regression case for signaltest")
+    configure(**load_pyproject())
     if config.getoption("signaltest_update", False):
         os.environ["SIGNALTEST_UPDATE"] = "1"
 

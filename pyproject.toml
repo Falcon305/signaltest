@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "Hatim" }]
-dependencies = ["scipy>=1.11"]
+dependencies = ["scipy>=1.11", "tomli>=2.0; python_version<'3.11'"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.6", "mypy>=1.11", "coverage>=7.0", "pre-commit>=3.0"]
