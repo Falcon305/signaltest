@@ -20,4 +20,5 @@ jobs:
       - run: uv run ruff check src tests examples
       - run: uv run mypy
         if: matrix.python-version == '3.12'
-      - run: uv run pytest -q
+      - run: uv run coverage run -m pytest -q
+      - run: uv run coverage report

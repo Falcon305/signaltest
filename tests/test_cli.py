@@ -24,3 +24,19 @@ def test_show_missing_case_returns_1(tmp_path, capsys):
     path = tmp_path / "b.json"
     BaselineStore(path).save({})
     assert main(["show", str(path), "nope"]) == 1
+
+
+def test_show_prints_record(tmp_path, capsys):
+    path = tmp_path / "b.json"
+    k = key("c1", "exact_match")
+    update_baseline(BaselineStore(path), k, make_record([1, 0, 1], model="m1"))
+    code = main(["show", str(path), k])
+    out = capsys.readouterr().out
+    assert '"model": "m1"' in out
+    assert code == 0
+
+
+def test_no_command_prints_help(capsys):
+    code = main([])
+    assert "usage" in capsys.readouterr().out.lower()
+    assert code == 0
