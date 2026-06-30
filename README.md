@@ -223,11 +223,15 @@ uv sync --extra dev
 uv run pytest
 ```
 
-Try the offline demo (cached responses, no API key):
+Try the offline examples (cached responses, no API key):
 
 ```sh
-python examples/demo.py
+python examples/demo.py        # smallest possible case
+python examples/tool_agent.py  # tool-using agent: trajectory + answer checks
 ```
+
+See [docs/architecture.md](docs/architecture.md) for how the pieces fit together
+and how to add your own metric.
 
 ## FAQ
 
