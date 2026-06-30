@@ -10,3 +10,4 @@ build/
 .coverage
 .env
 .env.local
+uv.lock
