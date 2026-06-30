@@ -165,6 +165,14 @@ def test_comparisons_do_not_affect_rope_pass():
     assert one.samples == many.samples == 5
 
 
+def test_workers_match_single_threaded():
+    base = [1.0] * 8
+    serial = sequential_gate(base, cycle_sampler([1.0]), kind="numeric", sizes=[5, 10])
+    parallel = sequential_gate(base, lambda: 1.0, kind="numeric", sizes=[5, 10], workers=4)
+    assert serial.status == parallel.status == PASS
+    assert serial.samples == parallel.samples == 5
+
+
 def test_lower_better_rope_pass():
     baseline = [1.0] * 8
     verdict = sequential_gate(
