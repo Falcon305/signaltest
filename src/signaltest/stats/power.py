@@ -18,6 +18,17 @@ def samples_for_effect(
     return max(2, int(ceil(n)))
 
 
+def samples_for_paired(
+    std_diff: float, min_effect: float, alpha: float = 0.05, power: float = 0.8
+) -> int:
+    """Pairs needed to detect a mean paired difference of `min_effect`."""
+    if min_effect <= 0 or std_diff <= 0:
+        return 2
+    z = norm.ppf(1 - alpha / 2) + norm.ppf(power)
+    n = (z**2) * (std_diff**2) / (min_effect**2)
+    return max(2, int(ceil(n)))
+
+
 def samples_for_proportion(
     rate: float, min_effect: float, alpha: float = 0.05, power: float = 0.8
 ) -> int:
