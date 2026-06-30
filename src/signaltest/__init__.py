@@ -25,7 +25,7 @@ from signaltest.stats.gate import FAIL, INCONCLUSIVE, PASS
 from signaltest.trajectory.diff import render_diff
 from signaltest.trajectory.model import Step
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 __all__ = [
     "Case",

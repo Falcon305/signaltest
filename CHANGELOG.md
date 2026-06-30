@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## Unreleased
 
+## 0.7.0 - 2026-06-30
+
 ### Added
 - Sequential mode spends alpha with an O'Brien-Fleming schedule by default (almost
   none early, most at the final look), so early stops need strong evidence but the
