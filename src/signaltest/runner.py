@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
+from signaltest.baseline.cache import ScoreCache
 from signaltest.baseline.record import key, make_record, update_baseline
 from signaltest.baseline.store import BaselineStore
 from signaltest.compare import measure_scores
@@ -19,15 +20,24 @@ class Case:
     run: Callable[[], Any]
     expected: Any
     metric: Metric
+    cache_key: Optional[str] = None
 
 
-def collect_scores(case: Case, n: int) -> list[Optional[Score]]:
+def collect_scores(case: Case, n: int, cache: Optional[ScoreCache] = None) -> list[Optional[Score]]:
+    ckey: Optional[str] = None
+    if cache is not None and case.cache_key is not None:
+        ckey = f"{case.cache_key}::{case.metric.name}::n{n}"
+        cached = cache.get(ckey)
+        if cached is not None:
+            return cached
     scores: list[Optional[Score]] = []
     for _ in range(n):
         try:
             scores.append(case.metric.score(case.run(), case.expected))
         except Exception:
             scores.append(None)
+    if cache is not None and ckey is not None:
+        cache.put(ckey, scores)
     return scores
 
 
@@ -39,8 +49,9 @@ def _measure(
     min_valid: int,
     min_effect: Optional[float],
     model: Optional[str],
+    cache: Optional[ScoreCache] = None,
 ) -> Union[Verdict, dict[str, Any]]:
-    candidate = [s for s in collect_scores(case, n) if s is not None]
+    candidate = [s for s in collect_scores(case, n, cache) if s is not None]
     k = key(case.case_id, case.metric.name)
     data = store.load()
 
@@ -89,8 +100,10 @@ def check_case(
     min_effect: Optional[float] = None,
     min_valid: int = 2,
     model: Optional[str] = None,
+    cache: Optional[Union[str, Path]] = None,
 ) -> Verdict:
-    measured = _measure(case, store, n, alpha, min_valid, min_effect, model)
+    score_cache = ScoreCache(cache) if cache is not None else None
+    measured = _measure(case, store, n, alpha, min_valid, min_effect, model, score_cache)
     verdict = measured if isinstance(measured, Verdict) else _decide(measured, alpha, min_valid)
     collector.record(case.case_id, verdict)
     return verdict
@@ -111,12 +124,14 @@ def run_suite(
     min_effect: Optional[float] = None,
     min_valid: int = 2,
     model: Optional[str] = None,
+    cache: Optional[Union[str, Path]] = None,
 ) -> dict[str, Verdict]:
     store = BaselineStore(baseline_path)
+    score_cache = ScoreCache(cache) if cache is not None else None
     results: dict[str, Verdict] = {}
     pending = []
     for case in cases:
-        measured = _measure(case, store, n, alpha, min_valid, min_effect, model)
+        measured = _measure(case, store, n, alpha, min_valid, min_effect, model, score_cache)
         if isinstance(measured, Verdict):
             results[case.case_id] = measured
         else:
