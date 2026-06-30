@@ -1,0 +1,53 @@
+{
+  "answer_quality::quality": {
+    "model": null,
+    "scores": [
+      0.82,
+      0.79,
+      0.81,
+      0.8,
+      0.83,
+      0.78,
+      0.81,
+      0.8,
+      0.82,
+      0.79,
+      0.81,
+      0.8
+    ]
+  },
+  "answer_quality_v2::quality": {
+    "model": null,
+    "scores": [
+      0.82,
+      0.79,
+      0.81,
+      0.8,
+      0.83,
+      0.78,
+      0.81,
+      0.8,
+      0.82,
+      0.79,
+      0.81,
+      0.8
+    ]
+  },
+  "exact_answer::exact_match": {
+    "model": null,
+    "scores": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  }
+}
