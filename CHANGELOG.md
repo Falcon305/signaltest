@@ -5,6 +5,13 @@ All notable changes to this project are documented here. The format is based on
 
 ## Unreleased
 
+### Added
+- GitHub Action that runs your cases and posts a sticky results comment on the
+  pull request, updated in place on every push.
+- `pytest --signaltest-json PATH` writes the run's verdicts to JSON.
+- `signaltest report` renders that JSON as a markdown table or plain text.
+- `to_markdown`, `write_json`, and `read_json` helpers in the public API.
+
 ## 0.1.0 - 2026-06-30
 
 ### Added

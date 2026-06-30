@@ -197,12 +197,48 @@ Because cases are plain pytest tests, your existing `pytest` step gates them:
 A failed case fails the build. Baselines live in the repo, so CI needs no secrets
 and nothing leaves your infrastructure.
 
+### GitHub Action with PR comments
+
+The bundled action runs your cases and posts a sticky results table on the pull
+request — updated in place on every push, so reviewers see the effect size and
+p-value of any regression next to the diff:
+
+```yaml
+name: regression
+on: pull_request
+
+jobs:
+  signaltest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write   # required to post the comment
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Falcon305/signaltest@v0.1.0
+        with:
+          install: pip install -e ".[dev]"
+          paths: tests/regression
+```
+
+| Input | Default | Meaning |
+|-------|---------|---------|
+| `python-version` | `3.12` | Python to run on |
+| `install` | `pip install -e .` | how to install your package and test deps |
+| `paths` | *(all tests)* | paths or extra pytest args for your cases |
+| `comment` | `true` | post the sticky PR comment |
+
+The table is produced from a results file your tests write with
+`pytest --signaltest-json results.json`; `signaltest report results.json`
+renders it, so you can reproduce the exact comment locally.
+
 ## CLI
 
 ```sh
 signaltest version
 signaltest baselines baselines/agent.json   # list recorded cases
 signaltest show baselines/agent.json math::exact_match
+signaltest report results.json              # render a markdown table (--format text for plain)
 ```
 
 ## Development

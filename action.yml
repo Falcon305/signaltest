@@ -1,0 +1,52 @@
+name: signaltest
+description: Run signaltest regression cases and comment the results on the pull request
+
+inputs:
+  python-version:
+    description: Python version to run on
+    default: "3.12"
+  install:
+    description: Command to install your package and its test dependencies
+    default: pip install -e .
+  paths:
+    description: Paths or extra pytest arguments for your signaltest cases
+    default: ""
+  comment:
+    description: Post a sticky results comment on the pull request
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - shell: bash
+      run: ${{ inputs.install }}
+    - shell: bash
+      run: pip install signaltest
+    - shell: bash
+      run: pytest ${{ inputs.paths }} --signaltest-json signaltest-results.json
+    - if: always()
+      shell: bash
+      run: |
+        signaltest report signaltest-results.json > signaltest-report.md \
+          || printf '<!-- signaltest -->\n### signaltest\n\nNo results were produced.\n' > signaltest-report.md
+    - if: always() && inputs.comment == 'true' && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const body = fs.readFileSync('signaltest-report.md', 'utf8');
+          const marker = '<!-- signaltest -->';
+          const { owner, repo } = context.repo;
+          const issue_number = context.issue.number;
+          const comments = await github.paginate(github.rest.issues.listComments, {
+            owner, repo, issue_number,
+          });
+          const existing = comments.find((c) => c.body && c.body.includes(marker));
+          if (existing) {
+            await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+          } else {
+            await github.rest.issues.createComment({ owner, repo, issue_number, body });
+          }
