@@ -99,6 +99,33 @@ def test_inconclusive_when_all_samples_error():
     assert verdict.samples == 6
 
 
+def test_comparisons_raise_the_fail_bar():
+    base = [1.0] * 8
+    values = [0.4] * 5 + [1.0] * 3  # permutation p ~ 0.025
+    fail = sequential_gate(base, cycle_sampler(values), kind="numeric", sizes=[8])
+    held = sequential_gate(base, cycle_sampler(values), kind="numeric", sizes=[8], comparisons=3)
+    assert fail.status == FAIL
+    assert held.status != FAIL
+
+
+def test_comparisons_do_not_block_a_clear_regression():
+    base = [1.0] * 8
+    verdict = sequential_gate(
+        base, cycle_sampler([0.0]), kind="numeric", sizes=[5, 10, 15, 20], comparisons=50
+    )
+    assert verdict.status == FAIL
+
+
+def test_comparisons_do_not_affect_rope_pass():
+    base = [1.0] * 8
+    one = sequential_gate(base, cycle_sampler([1.0]), kind="numeric", sizes=[5, 10])
+    many = sequential_gate(
+        base, cycle_sampler([1.0]), kind="numeric", sizes=[5, 10], comparisons=99
+    )
+    assert one.status == many.status == PASS
+    assert one.samples == many.samples == 5
+
+
 def test_lower_better_rope_pass():
     baseline = [1.0] * 8
     verdict = sequential_gate(
