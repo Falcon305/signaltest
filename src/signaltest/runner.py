@@ -1,3 +1,5 @@
+import asyncio
+import inspect
 import os
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
@@ -28,7 +30,10 @@ class Case:
 
 def _sample(case: Case) -> Optional[Score]:
     try:
-        return case.metric.score(case.run(), case.expected)
+        output = case.run()
+        if inspect.iscoroutine(output):
+            output = asyncio.run(output)
+        return case.metric.score(output, case.expected)
     except Exception:
         return None
 
