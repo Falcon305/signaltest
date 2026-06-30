@@ -15,6 +15,7 @@ class Verdict:
     reason: str
     ci_low: Optional[float] = None
     ci_high: Optional[float] = None
+    samples: Optional[int] = None
 
 
 def decide_gate(
@@ -50,4 +51,9 @@ def decide_gate(
 
 def is_underpowered(n_baseline: int, n_candidate: int, alpha: float = 0.05) -> bool:
     smallest_possible_p = 2 / comb(n_baseline + n_candidate, n_baseline)
+    return smallest_possible_p > alpha
+
+
+def is_underpowered_paired(n_pairs: int, alpha: float = 0.05) -> bool:
+    smallest_possible_p = 2 / (1 << n_pairs)
     return smallest_possible_p > alpha

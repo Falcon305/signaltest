@@ -2,10 +2,22 @@ from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
-from scipy.stats import fisher_exact, mannwhitneyu, permutation_test
+from scipy.stats import fisher_exact, mannwhitneyu, permutation_test, wilcoxon
 
 PERMUTATION = "permutation"
 MANNWHITNEY = "mannwhitney"
+
+
+def paired_significance(baseline: Sequence[float], candidate: Sequence[float]) -> float:
+    """Wilcoxon signed-rank p-value for per-input paired scores."""
+    if len(baseline) != len(candidate):
+        raise ValueError("paired test needs equal-length samples")
+    if len(baseline) < 2:
+        raise ValueError("each group needs at least 2 samples")
+    diffs = np.asarray(candidate, dtype=float) - np.asarray(baseline, dtype=float)
+    if np.all(diffs == 0):
+        return 1.0
+    return float(wilcoxon(diffs, alternative="two-sided").pvalue)
 
 
 def numeric_significance(

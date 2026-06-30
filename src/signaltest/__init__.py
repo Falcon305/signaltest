@@ -1,5 +1,5 @@
 from signaltest.adapters import scores_from_deepeval, scores_from_inspect_log
-from signaltest.compare import compare_scores
+from signaltest.compare import compare_scores, top_regressions
 from signaltest.config import configure
 from signaltest.history import append_history, format_trends, read_history
 from signaltest.metrics.base import Metric
@@ -25,7 +25,7 @@ from signaltest.stats.gate import FAIL, INCONCLUSIVE, PASS
 from signaltest.trajectory.diff import render_diff
 from signaltest.trajectory.model import Step
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "Case",
@@ -33,6 +33,7 @@ __all__ = [
     "check_case",
     "run_suite",
     "compare_scores",
+    "top_regressions",
     "scores_from_inspect_log",
     "scores_from_deepeval",
     "format_report",

@@ -25,6 +25,8 @@ def _stats(verdict: Verdict) -> str:
         parts.append(f"95% CI [{verdict.ci_low:+.3f}, {verdict.ci_high:+.3f}]")
     if verdict.pvalue is not None:
         parts.append(f"p={verdict.pvalue:.3f}")
+    if verdict.samples is not None:
+        parts.append(f"{verdict.samples} runs")
     return ", ".join(parts)
 
 
@@ -54,6 +56,20 @@ def ci_bar(verdict: Verdict, width: int = 21) -> str:
     return "".join(cells)
 
 
+_SEVERITY = {FAIL: 0, INCONCLUSIVE: 1, PASS: 2}
+
+
+def _ordered(results: dict[str, Verdict]) -> list[tuple[str, Verdict]]:
+    """Worst first: failures, then inconclusive, then passes; biggest drop on top."""
+
+    def rank(item: tuple[str, Verdict]) -> tuple[int, float]:
+        verdict = item[1]
+        effect = verdict.effect if verdict.effect is not None else float("inf")
+        return (_SEVERITY.get(verdict.status, 3), effect)
+
+    return sorted(results.items(), key=rank)
+
+
 def _counts(results: dict[str, Verdict]) -> dict[str, int]:
     counts = {PASS: 0, FAIL: 0, INCONCLUSIVE: 0}
     for verdict in results.values():
@@ -68,7 +84,7 @@ def _summary(results: dict[str, Verdict]) -> str:
 
 def format_report(results: dict[str, Verdict]) -> str:
     lines = []
-    for case_id, verdict in results.items():
+    for case_id, verdict in _ordered(results):
         lines.append(f"{verdict.status.upper():13} {case_id}: {describe(verdict)}")
     lines.append(_summary(results))
     return "\n".join(lines)
@@ -82,7 +98,7 @@ def to_markdown(results: dict[str, Verdict]) -> str:
         "| Case | Status | Detail | 95% CI |",
         "| --- | --- | --- | --- |",
     ]
-    for case_id, verdict in results.items():
+    for case_id, verdict in _ordered(results):
         icon = ICON.get(verdict.status, "")
         bar = ci_bar(verdict)
         cell = f"`{bar}`" if bar else ""
@@ -94,7 +110,7 @@ def to_markdown(results: dict[str, Verdict]) -> str:
 
 def to_html(results: dict[str, Verdict]) -> str:
     rows = []
-    for case_id, verdict in results.items():
+    for case_id, verdict in _ordered(results):
         color = COLOR.get(verdict.status, "#000")
         bar = ci_bar(verdict)
         rows.append(
