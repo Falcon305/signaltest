@@ -422,6 +422,10 @@ python examples/tool_agent.py  # tool-using agent: trajectory + answer checks
 python examples/flaky.py       # threshold vs. statistical gate, side by side
 ```
 
+For a full run against a live model — sequential sampling, paired comparison, and
+`top_regressions` on a real Claude agent — see
+[examples/real_agent/](examples/real_agent/) (needs `ANTHROPIC_API_KEY`).
+
 See [docs/architecture.md](docs/architecture.md) for how the pieces fit together
 and how to add your own metric.
 
