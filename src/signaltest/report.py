@@ -1,4 +1,11 @@
+import json
+from dataclasses import asdict
+from pathlib import Path
+from typing import Union
+
 from signaltest.stats.gate import FAIL, INCONCLUSIVE, PASS, Verdict
+
+ICON = {PASS: "✅", FAIL: "❌", INCONCLUSIVE: "⚠️"}
 
 
 def describe(verdict: Verdict) -> str:
@@ -16,16 +23,50 @@ def _stats(verdict: Verdict) -> str:
     return ", ".join(parts)
 
 
-def format_report(results: dict[str, Verdict]) -> str:
+def _counts(results: dict[str, Verdict]) -> dict[str, int]:
     counts = {PASS: 0, FAIL: 0, INCONCLUSIVE: 0}
+    for verdict in results.values():
+        counts[verdict.status] += 1
+    return counts
+
+
+def _summary(results: dict[str, Verdict]) -> str:
+    c = _counts(results)
+    return f"{c[PASS]} passed, {c[FAIL]} failed, {c[INCONCLUSIVE]} inconclusive"
+
+
+def format_report(results: dict[str, Verdict]) -> str:
     lines = []
     for case_id, verdict in results.items():
-        counts[verdict.status] += 1
         lines.append(f"{verdict.status.upper():13} {case_id}: {describe(verdict)}")
-    lines.append(
-        f"{counts[PASS]} passed, {counts[FAIL]} failed, {counts[INCONCLUSIVE]} inconclusive"
-    )
+    lines.append(_summary(results))
     return "\n".join(lines)
+
+
+def to_markdown(results: dict[str, Verdict]) -> str:
+    lines = [
+        "<!-- signaltest -->",
+        "### signaltest",
+        "",
+        "| Case | Status | Detail |",
+        "| --- | --- | --- |",
+    ]
+    for case_id, verdict in results.items():
+        icon = ICON.get(verdict.status, "")
+        lines.append(f"| {case_id} | {icon} {verdict.status} | {describe(verdict)} |")
+    lines.append("")
+    lines.append(f"**{_summary(results)}**")
+    return "\n".join(lines)
+
+
+def write_json(results: dict[str, Verdict], path: Union[str, Path]) -> None:
+    data = {case_id: asdict(verdict) for case_id, verdict in results.items()}
+    Path(path).write_text(json.dumps(data, indent=2, sort_keys=True))
+
+
+def read_json(path: Union[str, Path]) -> dict[str, Verdict]:
+    raw = json.loads(Path(path).read_text())
+    return {case_id: Verdict(**fields) for case_id, fields in raw.items()}
 
 
 def exit_code(results: dict[str, Verdict]) -> int:

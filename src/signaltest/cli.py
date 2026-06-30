@@ -5,6 +5,7 @@ from typing import Optional
 
 from signaltest import __version__
 from signaltest.baseline.store import BaselineStore
+from signaltest.report import format_report, read_json, to_markdown
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -16,6 +17,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     show_cmd = sub.add_parser("show")
     show_cmd.add_argument("path")
     show_cmd.add_argument("case")
+    report_cmd = sub.add_parser("report")
+    report_cmd.add_argument("path")
+    report_cmd.add_argument("--format", choices=["md", "text"], default="md")
     args = parser.parse_args(argv)
 
     if args.command == "version":
@@ -33,6 +37,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"no baseline for {args.case}")
             return 1
         print(json.dumps(record, indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "report":
+        results = read_json(args.path)
+        print(to_markdown(results) if args.format == "md" else format_report(results))
         return 0
 
     parser.print_help()

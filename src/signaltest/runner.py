@@ -9,6 +9,7 @@ from signaltest.baseline.record import key, make_record, update_baseline
 from signaltest.baseline.store import BaselineStore
 from signaltest.metrics.base import NUMERIC, Metric, Score
 from signaltest.report import describe
+from signaltest.results import collector
 from signaltest.stats.correction import bh_adjust
 from signaltest.stats.gate import FAIL, PASS, Verdict, decide_gate, is_underpowered
 from signaltest.stats.significance import boolean_significance, numeric_significance
@@ -98,9 +99,9 @@ def check_case(
     model: Optional[str] = None,
 ) -> Verdict:
     measured = _measure(case, store, n, alpha, min_valid, min_effect, model)
-    if isinstance(measured, Verdict):
-        return measured
-    return _decide(measured, alpha, min_valid)
+    verdict = measured if isinstance(measured, Verdict) else _decide(measured, alpha, min_valid)
+    collector.record(case.case_id, verdict)
+    return verdict
 
 
 def assert_no_regression(case: Case, baseline_path: Union[str, Path], **kwargs: Any) -> Verdict:
@@ -133,4 +134,6 @@ def run_suite(
     for (case, stats), pvalue in zip(pending, adjusted):
         stats = {**stats, "pvalue": pvalue}
         results[case.case_id] = _decide(stats, alpha, min_valid)
+    for case_id, verdict in results.items():
+        collector.record(case_id, verdict)
     return results

@@ -42,3 +42,28 @@ def test_no_command_prints_help(capsys):
     code = main([])
     assert "usage" in capsys.readouterr().out.lower()
     assert code == 0
+
+
+def test_report_renders_markdown(tmp_path, capsys):
+    from signaltest.report import write_json
+    from signaltest.stats.gate import FAIL, Verdict
+
+    path = tmp_path / "results.json"
+    write_json({"math": Verdict(FAIL, pvalue=0.01, effect=-0.2, reason="regression")}, path)
+    code = main(["report", str(path)])
+    out = capsys.readouterr().out
+    assert "<!-- signaltest -->" in out
+    assert "❌ fail" in out
+    assert code == 0
+
+
+def test_report_text_format(tmp_path, capsys):
+    from signaltest.report import write_json
+    from signaltest.stats.gate import PASS, Verdict
+
+    path = tmp_path / "results.json"
+    write_json({"geo": Verdict(PASS, None, None, "no significant regression")}, path)
+    code = main(["report", str(path), "--format", "text"])
+    out = capsys.readouterr().out
+    assert "PASS" in out
+    assert code == 0
