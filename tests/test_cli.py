@@ -67,3 +67,39 @@ def test_report_text_format(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "PASS" in out
     assert code == 0
+
+
+def test_power_recommends_samples(tmp_path, capsys):
+    path = tmp_path / "b.json"
+    k = key("c1", "numeric")
+    update_baseline(BaselineStore(path), k, make_record([1.0, 2.0, 3.0, 4.0], model=None))
+    code = main(["power", str(path), k, "--min-effect", "0.5", "--kind", "numeric"])
+    out = capsys.readouterr().out
+    assert "samples per run" in out
+    assert code == 0
+
+
+def test_power_infers_boolean_kind(tmp_path, capsys):
+    path = tmp_path / "b.json"
+    k = key("c1", "exact_match")
+    update_baseline(BaselineStore(path), k, make_record([True, False, True, True], model=None))
+    code = main(["power", str(path), k, "--min-effect", "0.1"])
+    out = capsys.readouterr().out
+    assert "samples per run" in out
+    assert code == 0
+
+
+def test_power_infers_numeric_kind(tmp_path, capsys):
+    path = tmp_path / "b.json"
+    k = key("c1", "numeric")
+    update_baseline(BaselineStore(path), k, make_record([1.5, 2.7, 3.1, 4.9], model=None))
+    code = main(["power", str(path), k, "--min-effect", "0.5"])
+    out = capsys.readouterr().out
+    assert "samples per run" in out
+    assert code == 0
+
+
+def test_power_missing_case_returns_1(tmp_path, capsys):
+    path = tmp_path / "b.json"
+    BaselineStore(path).save({})
+    assert main(["power", str(path), "nope", "--min-effect", "0.1"]) == 1
